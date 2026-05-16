@@ -1,5 +1,8 @@
 # obsidian — Obsidian Vault Skill
 
+> **Важно:** OpenClaw bundled skill "obsidian" (obsidian-cli) на этой системе **не работает** — нет obsidian-cli.
+> Используй скрипты из этой папки напрямую (skill.py, notion_sync.py).
+
 **Vault:** `/home/apbrandom/.openclaw/workspace/vault`  
 **Ships:** `vault/ships/` (ATLAS_1, PRUT, TISA, TURAN)  
 **Script:** `skills/obsidian/skill.py`  

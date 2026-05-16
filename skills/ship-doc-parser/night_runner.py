@@ -82,7 +82,7 @@ def vl_extract(png: Path) -> dict:
     req_file.write_text(json.dumps(req))
     r = subprocess.run(
         ["curl", "-s", OLLAMA, "-d", f"@{req_file}"],
-        capture_output=True, text=True, timeout=120,
+        capture_output=True, text=True, timeout=300,
     )
     raw = json.loads(r.stdout)["response"].strip()
     raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("`").strip()

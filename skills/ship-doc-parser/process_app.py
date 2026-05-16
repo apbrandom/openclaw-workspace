@@ -60,8 +60,13 @@ def vl_extract(png):
     req_file = Path("/tmp/vl_req.json")
     req_file.write_text(json.dumps(req))
     r = subprocess.run(["curl", "-s", OLLAMA, "-d", f"@{req_file}"],
-                       capture_output=True, text=True, timeout=120)
-    raw = json.loads(r.stdout)["response"].strip()
+                       capture_output=True, text=True, timeout=300)
+    if not r.stdout.strip():
+        raise RuntimeError(f"Ollama вернул пустой ответ (curl exit={r.returncode}, stderr={r.stderr[:80]})")
+    resp = json.loads(r.stdout)
+    if "error" in resp:
+        raise RuntimeError(f"Ollama error: {resp['error']}")
+    raw = resp["response"].strip()
     raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("`").strip()
     return json.loads(raw)
 

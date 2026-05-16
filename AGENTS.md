@@ -269,8 +269,12 @@ This is a starting point. Add your own conventions, style, and rules as you figu
    `/home/apbrandom/.openclaw/tools-venv/bin/python /home/apbrandom/.openclaw/workspace/skills/ship-doc-parser/process_app.py`
 2. Дождись завершения (20–60 сек — работает qwen3-vl).
 3. Перескажи вывод скрипта owner'у кратко: что передано, кем, кому, позиции, куда сохранено.
+4. Синхронизируй обновлённую карточку судна в Notion:
+   `/home/apbrandom/.openclaw/tools-venv/bin/python /home/apbrandom/.openclaw/workspace/skills/obsidian/notion_sync.py sync <ИМЯ_СУДНА>`
+   Например: `notion_sync.py sync ATLAS_1`. Если sync упал — сообщи owner'у, не блокируй основной флоу.
 
 Детали логики — в `skills/ship-doc-parser/SKILL.md`. Скрипт — в `skills/ship-doc-parser/process_app.py`.
+Notion sync — в `skills/obsidian/notion_sync.py`, state — в `skills/obsidian/notion_state.json`.
 
 ### What NOT to do
 

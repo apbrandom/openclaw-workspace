@@ -53,6 +53,20 @@ def render_png(pdf):
         sys.exit("❌ pdftoppm не создал PNG")
     return pages[0]
 
+def vram_status() -> str:
+    """Вернуть строку с загруженными моделями и занятым VRAM."""
+    try:
+        r = subprocess.run(["curl", "-sf", "http://localhost:11434/api/ps"],
+                           capture_output=True, text=True, timeout=5)
+        models = json.loads(r.stdout).get("models", [])
+        if not models:
+            return "VRAM свободен"
+        parts = [f"{m['name']} ({m.get('size_vram', 0) // 1_073_741_824:.1f} GB)" for m in models]
+        return "В VRAM: " + ", ".join(parts)
+    except Exception:
+        return "VRAM: н/д"
+
+
 def vl_extract(png):
     img_b64 = base64.b64encode(png.read_bytes()).decode()
     req = {"model": VL_MODEL, "prompt": PROMPT,
@@ -60,7 +74,7 @@ def vl_extract(png):
     req_file = Path("/tmp/vl_req.json")
     req_file.write_text(json.dumps(req))
     r = subprocess.run(["curl", "-s", OLLAMA, "-d", f"@{req_file}"],
-                       capture_output=True, text=True, timeout=300)
+                       capture_output=True, text=True, timeout=600)
     if not r.stdout.strip():
         raise RuntimeError(f"Ollama вернул пустой ответ (curl exit={r.returncode}, stderr={r.stderr[:80]})")
     resp = json.loads(r.stdout)
@@ -194,7 +208,7 @@ def process_one(pdf, ships):
     png = render_png(pdf)
     log("RENDER", f"Готово за {time.time()-t:.1f} сек → {png.name}")
 
-    log("VL", f"Запускаю {VL_MODEL} — извлечение полей АПП...")
+    log("VL", f"Запускаю {VL_MODEL} — извлечение полей АПП...  [{vram_status()}]")
     t = time.time()
     data = vl_extract(png)
     elapsed = time.time() - t

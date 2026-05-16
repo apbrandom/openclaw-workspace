@@ -147,6 +147,14 @@ Reactions are lightweight social signals. Humans use them constantly — they sa
 
 Skills provide your tools. When you need one, check its `SKILL.md`. Keep local notes (camera names, SSH details, voice preferences) in `TOOLS.md`.
 
+**📓 Vault / Obsidian** — для работы с заметками и vault/ships использовать:
+`/home/apbrandom/.openclaw/tools-venv/bin/python /home/apbrandom/.openclaw/workspace/skills/obsidian/skill.py`
+Команды: `new`, `search`, `list`, `move`, `delete`, `open`. OpenClaw bundled "obsidian" skill на этой системе **не работает** (нет obsidian-cli, WSL2).
+
+**☁️ Notion sync** — после обновления vault/ships запускать:
+`/home/apbrandom/.openclaw/tools-venv/bin/python /home/apbrandom/.openclaw/workspace/skills/obsidian/notion_sync.py sync <SHIP>`
+Notion = облачный дашборд для владельца. Vault = локальная база данных Лизы. Оба нужны.
+
 **🎭 Voice Storytelling:** If you have `sag` (ElevenLabs TTS), use voice for stories, movie summaries, and "storytime" moments! Way more engaging than walls of text. Surprise people with funny voices.
 
 **📝 Platform Formatting:**

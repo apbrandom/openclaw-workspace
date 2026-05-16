@@ -13,17 +13,28 @@ Obsidian на Windows видит vault через `\\wsl.localhost\Ubuntu\home\a
 ## Команды
 
 ```bash
+SKILL="/home/apbrandom/.openclaw/tools-venv/bin/python /home/apbrandom/.openclaw/workspace/skills/obsidian/skill.py"
+
 # Создать заметку
-python skills/obsidian/skill.py new "Название заметки"
-python skills/obsidian/skill.py new "Inspection report" --folder inspections --ship ATLAS_1
+$SKILL new "Название заметки"
+$SKILL new "Inspection report" --folder inspections --ship ATLAS_1
 
 # Поиск по vault
-python skills/obsidian/skill.py search "главный двигатель"
-python skills/obsidian/skill.py search "TURAN"
+$SKILL search "главный двигатель"
+$SKILL search "TURAN" --folder ships
 
 # Список заметок
-python skills/obsidian/skill.py list
-python skills/obsidian/skill.py list ships
+$SKILL list
+$SKILL list ships
+
+# Переместить заметку (обновляет [[wikilinks]] во всём vault)
+$SKILL move "old/note" "new/folder/note"
+
+# Удалить заметку (через trash если есть)
+$SKILL delete "folder/note"
+
+# Открыть заметку в Windows Obsidian (WSL2 → powershell URI)
+$SKILL open ships/ATLAS_1
 ```
 
 ## Флаги `new`

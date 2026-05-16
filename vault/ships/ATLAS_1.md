@@ -17,7 +17,7 @@ status: в эксплуатации
 imo:
 flag:
 owner:
-last_updated: 2026-05-13
+last_updated: 2026-05-15
 ---
 
 # ATLAS 1

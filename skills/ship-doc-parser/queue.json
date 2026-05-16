@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "95cd3b5d",
+      "path": "/home/apbrandom/.openclaw/workspace/vault/ships_docs/ATLAS_1/docs/DRAWING_2020_ATLAS_1_general-plan.pdf",
+      "filename": "DRAWING_2020_ATLAS_1_general-plan.pdf",
+      "pages": 6,
+      "estimated_minutes": 2,
+      "added_at": "2026-05-16T13:55:53",
+      "status": "pending",
+      "checkpoint_page": 0,
+      "result_dir": null,
+      "error": null
+    }
+  ]
+}

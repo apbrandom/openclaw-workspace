@@ -72,7 +72,7 @@ def main():
 
     print(f"📄 {pdf.name}  {size_str}  {pages} стр  ≈{estimated_min} мин")
 
-    if pages <= SMALL_PAGES or estimated_min <= SMALL_MINUTES:
+    if pages <= SMALL_PAGES:
         print("▶ Быстрый файл — обрабатываю сразу…")
         subprocess.run(
             ["/home/apbrandom/.openclaw/tools-venv/bin/python", str(PROCESS), str(pdf)],

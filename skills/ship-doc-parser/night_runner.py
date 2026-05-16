@@ -121,26 +121,40 @@ def process_item(item: dict) -> str:
     cp_data = load_checkpoint(result_dir)
     start_page = item.get("checkpoint_page", 0)
 
-    print(f"\n📄 {item['filename']} ({total_pages} стр), старт со стр {start_page}")
+    def log(tag, msg):
+        print(f"[{tag:<8}] {msg}", flush=True)
+
+    log("PDF", f"Получен файл: {item['filename']} ({item['pages']} стр, ≈{item['estimated_minutes']} мин)")
+    if start_page > 0:
+        log("RESUME", f"Продолжаю с checkpoint: стр {start_page}/{total_pages}")
+    else:
+        log("INIT", f"Старт обработки — {total_pages} страниц")
 
     for page_num in range(start_page, total_pages):
         if should_stop():
             pdf_queue.update_checkpoint(item["id"], page_num)
             save_checkpoint(result_dir, cp_data)
-            print(f"⏱ 07:00 — стоп на стр {page_num}/{total_pages}")
+            log("STOP", f"07:00 — сохраняю checkpoint на стр {page_num}/{total_pages}")
             return "stopped"
 
+        t = time.time()
+        log("RENDER", f"Стр {page_num + 1}/{total_pages} — конвертирую в PNG...")
         try:
             png = render_page_png(pdf, page_num)
+            log("VL", f"Запускаю {VL_MODEL} для стр {page_num + 1}...")
             extracted = vl_extract(png)
+            elapsed = time.time() - t
+            title = extracted.get("title") or extracted.get("doc_type") or "—"
+            log("VL", f"Готово за {elapsed:.0f} сек  →  {title}")
             png.unlink(missing_ok=True)
         except Exception as e:
+            log("ERROR", f"Стр {page_num + 1}: {e}")
             extracted = {"error": str(e)}
 
         cp_data["results"].append({"page": page_num, "data": extracted})
         pdf_queue.update_checkpoint(item["id"], page_num + 1)
         save_checkpoint(result_dir, cp_data)
-        print(f"  стр {page_num + 1}/{total_pages}", end="\r")
+        log("CP", f"Checkpoint сохранён: {page_num + 1}/{total_pages} стр")
 
     # Write final summary markdown
     summary_path = result_dir / f"{item['filename']}_summary.md"
@@ -161,8 +175,12 @@ def process_item(item: dict) -> str:
     summary_path.write_text("".join(lines), encoding="utf-8")
 
     pdf_queue.mark_done(item["id"], str(result_dir))
-    print(f"\n✅ {item['filename']} готов → {result_dir.relative_to(VAULT.parent.parent)}")
+    log("DONE", f"Файл обработан полностью → {result_dir.relative_to(VAULT.parent.parent)}")
     return "done"
+
+
+def syslog(msg):
+    print(f"[SYSTEM  ] {msg}", flush=True)
 
 
 def main():
@@ -171,21 +189,21 @@ def main():
     args = parser.parse_args()
 
     now = datetime.now()
-    print(f"🌙 Night runner старт: {now.strftime('%Y-%m-%d %H:%M')}")
+    syslog(f"Night runner запущен: {now.strftime('%Y-%m-%d %H:%M:%S')}")
 
     if not args.force and should_stop():
-        print("Уже после 07:00 — выход. Используй --force для ручного запуска.")
+        syslog("Время после 07:00 — плановый выход. Для ручного запуска: --force")
         sys.exit(0)
 
     items = pdf_queue.get_pending()
     if not items:
-        print("Очередь пуста.")
+        syslog("Очередь пуста — нечего обрабатывать.")
         send_telegram("🌙 Ночная обработка: очередь пуста.")
         return
 
     total = len(items)
     total_pages = sum(i["pages"] - i.get("checkpoint_page", 0) for i in items)
-    print(f"📂 В очереди: {total} файлов, ~{total_pages} стр")
+    syslog(f"Очередь: {total} файлов · ~{total_pages} стр · плановый стоп в 07:00")
     send_telegram(
         f"🌙 *Ночная обработка началась*\n"
         f"{total} файлов · ~{total_pages} стр · стоп в 07:00"
@@ -206,6 +224,18 @@ def main():
         for i in remaining
     )
 
+    syslog("─" * 48)
+    if stats["done"]:
+        syslog(f"Завершено: {len(stats['done'])} файлов — " + ", ".join(stats["done"]))
+    if stats["stopped"]:
+        syslog(f"Прервано по таймеру (07:00): " + ", ".join(stats["stopped"]))
+    if stats["failed"]:
+        syslog(f"Ошибки: " + ", ".join(stats["failed"]))
+    if remaining:
+        syslog(f"В очереди осталось: {len(remaining)} файлов · ~{remaining_min} мин → следующей ночью")
+    else:
+        syslog("Очередь очищена полностью.")
+
     lines = ["🌅 *Ночная обработка завершена*\n"]
     if stats["done"]:
         lines.append(f"✅ Готово ({len(stats['done'])}): " + ", ".join(f"`{f}`" for f in stats["done"]))
@@ -217,10 +247,7 @@ def main():
         lines.append(f"\nОсталось {len(remaining)} файлов · ~{remaining_min} мин → следующей ночью")
     else:
         lines.append("\nОчередь очищена 🎉")
-
-    summary = "\n".join(lines)
-    print(summary)
-    send_telegram(summary)
+    send_telegram("\n".join(lines))
 
 
 if __name__ == "__main__":

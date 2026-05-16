@@ -4,7 +4,7 @@ Ship Document Intake — полный pipeline.
 Запуск: python3 process_app.py [path/to/file.pdf]
 Без аргумента — берёт последний PDF из inbound/.
 """
-import sys, os, json, base64, subprocess, re, shutil
+import sys, os, json, base64, subprocess, re, shutil, time
 from datetime import datetime
 from pathlib import Path
 
@@ -175,15 +175,31 @@ extraction_method: qwen3-vl
     event_file.write_text(content, encoding="utf-8")
     return event_file
 
+def log(tag, msg):
+    print(f"[{tag:<8}] {msg}", flush=True)
+
+
 def process_one(pdf, ships):
-    print(f"\n📄 PDF: {pdf.name}")
+    t0 = time.time()
+    size_kb = pdf.stat().st_size // 1024
+    log("PDF", f"Получен файл: {pdf.name} ({size_kb} KB)")
 
-    print("🖼  Рендер PNG…")
+    log("RENDER", "Конвертирую страницу → PNG (200 dpi)...")
+    t = time.time()
     png = render_png(pdf)
+    log("RENDER", f"Готово за {time.time()-t:.1f} сек → {png.name}")
 
-    print("🤖 qwen3-vl извлекает поля…")
+    log("VL", f"Запускаю {VL_MODEL} — извлечение полей АПП...")
+    t = time.time()
     data = vl_extract(png)
-    print("   →", json.dumps(data, ensure_ascii=False))
+    elapsed = time.time() - t
+    fields_found = sum(1 for v in data.values() if v)
+    log("VL", f"Поля извлечены за {elapsed:.0f} сек  ({fields_found} непустых из {len(data)})")
+    if data.get("date"):
+        log("VL", f"  дата={data['date']}  ship_from={data.get('ship_from')}  ship_to={data.get('ship_to')}")
+    items_count = len(data.get("items") or [])
+    if items_count:
+        log("VL", f"  позиций в АПП: {items_count}")
 
     matched = {}
     for field in ("ship_from", "ship_to", "destination"):
@@ -193,9 +209,9 @@ def process_one(pdf, ships):
         stem, info = match_ship(raw, ships)
         if stem:
             matched[field] = stem
-            print(f"   🚢 {field}: {raw} → {stem}")
+            log("MATCH", f"{field}: «{raw}» → {stem} (vault)")
         else:
-            print(f"   ⚠️  {field}: '{raw}' — внешнее")
+            log("MATCH", f"{field}: «{raw}» — внешнее судно, только логирую")
 
     doc_date = None
     raw_date = data.get("date")
@@ -208,44 +224,44 @@ def process_one(pdf, ships):
     for field, stem in matched.items():
         _, info = match_ship(data.get(field, ""), ships)
         if info and update_last_updated(info, doc_date):
-            print(f"   ✏️  {stem}: last_updated → {doc_date}")
+            log("VAULT", f"{stem}: обновляю last_updated → {doc_date}")
 
+    log("MOVE", "Перемещаю PDF в vault/ships_docs/...")
     pdf_dest = move_pdf(pdf, data, matched, doc_date)
-    print(f"📦 PDF → {pdf_dest.relative_to(VAULT.parent.parent)}")
+    log("MOVE", f"→ {pdf_dest.relative_to(VAULT.parent.parent)}")
 
+    log("EVENT", "Создаю запись события в vault/events/...")
     event_file = write_event(data, matched, str(pdf_dest), doc_date)
-    print(f"📝 Событие: {event_file.name}")
+    log("EVENT", f"→ {event_file.name}")
 
     items = data.get("items") or []
     items_str = ", ".join(f"{it.get('name','')} × {it.get('qty','?')}" for it in items)
     ship_from = matched.get("ship_from", data.get("ship_from", "?"))
-    ship_to   = matched.get("ship_to",   matched.get("destination", data.get("destination", "?")))
-    print(f"✅ {ship_from} → {ship_to}: {items_str}")
+    ship_to   = matched.get("ship_to", matched.get("destination", data.get("destination", "?")))
+    total_sec = time.time() - t0
+    log("DONE", f"{ship_from} → {ship_to}: {items_str}  ({total_sec:.0f} сек)")
 
 
 def main():
     pdfs = find_pdfs()
     total = len(pdfs)
-    print(f"📂 Найдено файлов: {total}")
+    log("INIT", f"Найдено файлов для обработки: {total}")
 
     ships = load_ships()
+    log("INIT", f"Загружено судов в vault: {len(ships)}")
     ok, failed = 0, []
 
     for i, pdf in enumerate(pdfs, 1):
-        print(f"\n[{i}/{total}]", end="")
+        print(f"\n── [{i}/{total}] ─────────────────────────────")
         try:
             process_one(pdf, ships)
             ok += 1
         except Exception as e:
-            print(f"❌ Ошибка: {e}")
+            log("ERROR", f"{pdf.name}: {e}")
             failed.append(pdf.name)
 
-    print(f"\n{'='*40}")
-    print(f"Итого: {ok}/{total} обработано", end="")
-    if failed:
-        print(f", ошибки: {', '.join(failed)}")
-    else:
-        print()
+    print(f"\n{'─'*48}")
+    log("ИТОГО", f"{ok}/{total} обработано" + (f"  |  ошибки: {', '.join(failed)}" if failed else ""))
 
 if __name__ == "__main__":
     main()

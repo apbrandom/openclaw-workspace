@@ -1,0 +1,31 @@
+# Session memory — new daily files
+memory/
+
+# Ship documents (large, sensitive)
+vault/ships_docs/
+vault/events/
+
+# Obsidian metadata
+vault/.obsidian/
+vault/ships/.obsidian/
+
+# Incoming documents
+inbound/
+
+# OpenClaw runtime data
+.openclaw/
+
+# Claude Code local config
+.claude/
+
+# Python virtual environments
+venv/
+.venv/
+tools-venv/
+
+# Archives
+_archive_*/
+
+# Temp / OS
+*.tmp
+.DS_Store

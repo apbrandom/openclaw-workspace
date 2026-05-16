@@ -18,7 +18,8 @@ VL_MODEL   = "qwen3-vl:latest"
 PROMPT     = ("Это скан Акта Приёма-Передачи (АПП, форма 117/OPS, CRANESHIP). "
               "Извлеки все поля в JSON. Пустые/нечитаемые — null.\n"
               "Поля: date (DD.MM.YYYY), form_number, ship_from, person_from, role_from, "
-              "ship_to, person_to, role_to, destination, items:[{name,unit,qty}].\n"
+              "ship_to, person_to, role_to, destination, items:[{name,unit,qty}], "
+              "category (1-2 слова — обобщение всех позиций, например: гидравлика, запчасти, такелаж, инструменты, расходники, химия, продукты).\n"
               "Только JSON, без markdown, без пояснений.")
 
 TRANSLIT = {
@@ -154,9 +155,12 @@ def canonical_ship(data, matched):
     return "UNKNOWN"
 
 def build_pdf_name(doc_type, doc_date, ship_stem, data):
-    """Формирует имя файла вида APP_2026-05-16_ATLAS_1_Shlang-RVD.pdf"""
-    items = data.get("items") or []
-    desc = translit(items[0]["name"]) if items else "document"
+    """Формирует имя файла вида APP_2026-05-16_ATLAS_1_gidravlika.pdf"""
+    category = data.get("category")
+    if not category:
+        items = data.get("items") or []
+        category = items[0]["name"] if items else "document"
+    desc = translit(str(category))[:20]
     date_str = doc_date or datetime.today().strftime("%Y-%m-%d")
     return f"{doc_type}_{date_str}_{ship_stem}_{desc}.pdf"
 
@@ -276,11 +280,11 @@ def process_one(pdf, ships):
     log("EVENT", f"→ {event_file.name}")
 
     items = data.get("items") or []
-    items_str = ", ".join(f"{it.get('name','')} × {it.get('qty','?')}" for it in items)
+    category = data.get("category") or f"{len(items)} позиций"
     ship_from = matched.get("ship_from", data.get("ship_from", "?"))
     ship_to   = matched.get("ship_to", matched.get("destination", data.get("destination", "?")))
     total_sec = time.time() - t0
-    log("DONE", f"{ship_from} → {ship_to}: {items_str}  ({total_sec:.0f} сек)")
+    log("DONE", f"{ship_from} → {ship_to}: [{category}]  ({total_sec:.0f} сек)")
 
 
 def main():

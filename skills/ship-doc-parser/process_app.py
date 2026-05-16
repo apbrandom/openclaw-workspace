@@ -39,7 +39,7 @@ def translit(s):
 
 def find_pdfs():
     if len(sys.argv) > 1:
-        return [Path(sys.argv[1])]
+        return [Path(p) for p in sys.argv[1:]]
     pdfs = sorted(INBOUND.glob("*.pdf"))
     if not pdfs:
         sys.exit("❌ Нет PDF в inbound/")
@@ -82,7 +82,11 @@ def vl_extract(png):
             time.sleep(10)
     if not r.stdout.strip():
         raise RuntimeError(f"Ollama вернул пустой ответ после 3 попыток (exit={r.returncode})")
-    resp = json.loads(r.stdout)
+    try:
+        resp = json.loads(r.stdout)
+    except json.JSONDecodeError:
+        preview = r.stdout[:120].replace('\n', '\\n')
+        raise RuntimeError(f"Ollama вернул невалидный JSON (len={len(r.stdout)}): {preview!r}")
     if "error" in resp:
         raise RuntimeError(f"Ollama error: {resp['error']}")
     raw = resp["response"].strip()

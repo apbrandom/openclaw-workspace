@@ -39,6 +39,19 @@ Skills are shared. Your setup is yours. Keeping them apart means you can update 
 
 Add whatever helps you do your job. This is your cheat sheet.
 
+## Vault & Obsidian
+
+- **OBSIDIAN_VAULT:** `/home/apbrandom/.openclaw/workspace/vault`
+  Открыть в Obsidian: Open Folder as Vault → выбрать эту папку.
+  Структура: `ships/` (карточки), `events/` (АПП и события), `ships_docs/` (PDF по судам).
+
+## Ship Document Intake
+
+- **Inbound PDF:** `/home/apbrandom/.openclaw/media/inbound/`
+- **Скрипт обработки:** `/home/apbrandom/.openclaw/workspace/skills/ship-doc-parser/process_app.py`
+- **Запуск:** `/home/apbrandom/.openclaw/tools-venv/bin/python /home/apbrandom/.openclaw/workspace/skills/ship-doc-parser/process_app.py`
+- **Vision model:** `qwen3-vl:latest` через `http://localhost:11434`
+
 ## Related
 
 - [Agent workspace](/concepts/agent-workspace)

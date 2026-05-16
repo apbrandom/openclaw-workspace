@@ -1,5 +1,9 @@
 ---
 name: TISA
+aliases:
+  - Tisa
+  - ТИСА
+  - Тиса
 type:
 year:
 capacity_teu:

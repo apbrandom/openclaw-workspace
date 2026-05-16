@@ -1,5 +1,15 @@
 ---
-name: ATLAS 1
+name: ATLAS_1
+aliases:
+  - ATLAS 1
+  - Atlas 1
+  - Atlas-1
+  - ATLAS-1
+  - ATLAS1
+  - АТЛАС 1
+  - АТЛАС-1
+  - АТЛАС1
+  - Атлас 1
 type: контейнеровоз
 year: 2020
 capacity_teu: 15000

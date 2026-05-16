@@ -1,5 +1,9 @@
 ---
 name: PRUT
+aliases:
+  - Prut
+  - ПРУТ
+  - Прут
 type:
 year:
 capacity_teu:

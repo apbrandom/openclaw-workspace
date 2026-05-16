@@ -1,5 +1,9 @@
 ---
 name: TURAN
+aliases:
+  - Turan
+  - ТУРАН
+  - Туран
 type:
 year:
 capacity_teu:

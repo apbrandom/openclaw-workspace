@@ -9,6 +9,42 @@
 
 ---
 
+## INTAKE DECISION (обязательно перед обработкой)
+
+**Точка входа:** всегда `intake.py`, не `process_app.py` напрямую.
+
+```bash
+/home/apbrandom/.openclaw/tools-venv/bin/python \
+  /home/apbrandom/.openclaw/workspace/skills/ship-doc-parser/intake.py \
+  /path/to/file.pdf
+```
+
+| Условие | Действие |
+|---------|----------|
+| ≤ 5 страниц **или** ≤ 2 мин оценка | `process_app.py` — немедленно |
+| > 5 страниц | Добавить в `queue.json` + Telegram уведомление |
+
+**Оценка:** ~22 сек/страница (qwen3-vl, RTX 5070 Ti). Файл 200 стр ≈ 73 мин.
+
+**Ночной runner** (`night_runner.py`) запускается автоматически в 00:00 (systemd таймер `openclaw-pdf-night.timer`), останавливается в 07:00 с сохранением checkpoint. Утром шлёт итог в Telegram. Если не успел за ночь — продолжит следующей ночью.
+
+**Проверить очередь:**
+```bash
+/home/apbrandom/.openclaw/tools-venv/bin/python \
+  /home/apbrandom/.openclaw/workspace/skills/ship-doc-parser/pdf_queue.py
+```
+
+**Ручной запуск ночного runner (тест):**
+```bash
+/home/apbrandom/.openclaw/tools-venv/bin/python \
+  /home/apbrandom/.openclaw/workspace/skills/ship-doc-parser/night_runner.py --force
+```
+
+**Результаты** большого файла → `vault/ships_docs/queue_results/{id}/`  
+**Логи** ночного runner → `~/.openclaw/logs/night-runner.log`
+
+---
+
 ## WHEN TO ACTIVATE
 
 - PDF в `~/.openclaw/media/inbound/*.pdf`
@@ -298,4 +334,5 @@ mv ~/.openclaw/media/inbound/{file.pdf} ~/.openclaw/media/processed/$YEAR_MONTH/
 - Два судна в одном АПП — оба логировать, оба искать в vault.
 - `wc -c` до/после правки vault — обязателен (SOUL.md).
 - Никогда не удалять исходный PDF — только перемещать в `processed/` или `inbound/manual/`.
+- Большие PDF (> 5 стр) **не обрабатывать вручную** — только через `intake.py` → очередь → ночной runner.
 - Если `qty` или `unit` чтение явно некорректно (например `qty: 0` для строки с наименованием) — оставить в событии с пометкой `?` и эскалация на проверку.

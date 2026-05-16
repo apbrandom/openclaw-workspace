@@ -77,9 +77,14 @@ def vl_extract(png):
         r = subprocess.run(["curl", "-s", OLLAMA, "-d", f"@{req_file}"],
                            capture_output=True, text=True, timeout=600)
         if r.stdout.strip():
-            break
+            try:
+                if json.loads(r.stdout).get("response", "").strip():
+                    break
+            except Exception:
+                break
         if attempt < 2:
-            time.sleep(10)
+            print(f"[VL      ] retry {attempt+1}/3 — жду 30 сек...", flush=True)
+            time.sleep(30)
     if not r.stdout.strip():
         raise RuntimeError(f"Ollama вернул пустой ответ после 3 попыток (exit={r.returncode})")
     try:
@@ -90,8 +95,13 @@ def vl_extract(png):
     if "error" in resp:
         raise RuntimeError(f"Ollama error: {resp['error']}")
     raw = resp["response"].strip()
+    if not raw:
+        raise RuntimeError("qwen3-vl вернул пустой response (модель ещё остывает?)")
     raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("`").strip()
-    return json.loads(raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        raise RuntimeError(f"qwen3-vl вернул невалидный JSON: {raw[:120]!r}")
 
 def normalize(s):
     if not s:
@@ -166,12 +176,15 @@ def move_pdf(pdf, data, matched, doc_date):
     shutil.move(str(pdf), str(dest))
     return dest
 
+def safe_fname(s, maxlen=25):
+    return translit(str(s))[:maxlen] if s else "NA"
+
 def write_event(data, matched, pdf_dest, doc_date):
     sf = data.get("ship_from") or "NA"
     st = data.get("ship_to") or "NA"
     sf_key = matched.get("ship_from", sf)
     st_key = matched.get("ship_to", st)
-    fname = f"{doc_date or datetime.today().strftime('%Y-%m-%d')}_APP_{sf_key}_{st_key}.md"
+    fname = f"{doc_date or datetime.today().strftime('%Y-%m-%d')}_APP_{safe_fname(sf_key)}_{safe_fname(st_key)}.md"
     items_md = "\n".join(
         f"| {i+1} | {it.get('name','')} | {it.get('unit','')} | {it.get('qty','')} |"
         for i, it in enumerate(data.get("items") or [])

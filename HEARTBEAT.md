@@ -45,19 +45,18 @@ If uncommitted changes → note it, report if non-trivial.
 
 ---
 
-## Nightly cron (03:00) — separate job, not here
+## Cron jobs (отдельные задания, не heartbeat)
 
-- Vault consistency (required fields in vault/ships/*.md)
-- Temp files cleanup (`/tmp/page-*.png`, etc.)
-- SQLite size check (`~/.openclaw/memory/main.sqlite`)
-- Disk usage (`df -h`)
-- Memory distillation: recent `memory/YYYY-MM-DD.md` → `MEMORY.md`
-
-## Hourly cron (:00) — separate job, not here
-
-- Telegram chat → distill to `memory/YYYY-MM-DD.md`
-- Clear/archive processed messages
+| Время | Задание | Что делает |
+|---|---|---|
+| `02:07` | `system-health-nightly` | temp cleanup, SQLite size, disk, port check |
+| `03:00` | `dream-nightly` | vault health, memory distillation, inbound дедупликация, git commit |
+| `03:00` | `Memory Dreaming Promotion` | managed by memory-core, LanceDB |
+| `09:00` | `dream-morning-report` | отчёт о ночном dream → Telegram |
+| `09:00 пн-пт` | `fleet-morning-brief` | сводка по флоту → Telegram |
+| `21:00` | `evening-system-report` | вечерний отчёт систем → Telegram |
+| `23:00` | `daily-telegram-memory` | дистиллировать Telegram-чат в daily memory |
 
 ---
 
-*Heavy tasks → nightly cron. Exact timing → cron. Batch periodic → here.*
+*Heavy tasks → cron. Batch periodic checks → here (heartbeat). Exact timing → cron.*

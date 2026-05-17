@@ -50,12 +50,24 @@ If uncommitted changes → note it, report if non-trivial.
 | Время | Задание | Что делает |
 |---|---|---|
 | `02:07` | `system-health-nightly` | temp cleanup, SQLite size, disk, port check |
-| `03:00` | `dream-nightly` | vault health, memory distillation, inbound дедупликация, git commit |
+| `03:00` | `dream-nightly` | vault health, memory distillation, inbound дедупликация, git commit, **Tier 2 ship synthesis** |
 | `03:00` | `Memory Dreaming Promotion` | managed by memory-core, LanceDB |
 | `09:00` | `dream-morning-report` | отчёт о ночном dream → Telegram |
 | `09:00 пн-пт` | `fleet-morning-brief` | сводка по флоту → Telegram |
 | `21:00` | `evening-system-report` | вечерний отчёт систем → Telegram |
 | `23:00` | `daily-telegram-memory` | дистиллировать Telegram-чат в daily memory |
+
+---
+
+---
+
+## Tier 2 Ship Synthesis (часть dream-nightly, 03:00)
+
+Найти все необработанные события с тегом `#tech-data`:
+```bash
+grep -rl "#tech-data" /home/apbrandom/.openclaw/workspace/vault/events/
+```
+Для каждого — извлечь структурированные поля (серийный номер, производитель, модель, год) и дописать в `## Технические характеристики` соответствующей карточки судна. После обработки — заменить тег `#tech-data` на `#tech-data-processed`. Не перезаписывать уже заполненные поля без аппрува.
 
 ---
 

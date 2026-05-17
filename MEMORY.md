@@ -20,7 +20,7 @@
 ### Локальная LLM
 - Ollama serve на порту 11434 (loopback only)
 - Активная модель: Qwen3 14B FP8 (занимает ~16 GB: 12.6 GB VRAM + 3.4 GB RAM)
-- Контекст модели: 40960 токенов
+- Контекст модели: 40960 токенов (max); num_ctx (configured): 32768
 - Температура для агентских задач: 0.1-0.3
 - Дополнительные модели: qwen3-vl (6.1 GB), nomic-embed-text (0.27 GB)
 
@@ -85,7 +85,7 @@
 ### Состояние на 15.05.2026
 - ✅ OpenClaw 2026.5.12 работает стабильно через systemd
 - ✅ Ollama активна, Qwen3 14B FP8 загружена
-- ✅ Compaction настроен (triggerAtPercent: 70, reserveTokensFloor: 20000)
+- ✅ Compaction настроен (reserveTokensFloor: 8000)
 - ✅ LanceDB активна (autoCapture + autoRecall)
 - ✅ Все порты только loopback (безопасно)
 - ✅ WSL2 ограничен 22 GB RAM через .wslconfig

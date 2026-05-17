@@ -4,17 +4,19 @@ Ship Document Intake — полный pipeline.
 Запуск: python3 process_app.py [path/to/file.pdf]
 Без аргумента — берёт последний PDF из inbound/.
 """
-import sys, os, json, base64, subprocess, re, shutil, time
+import sys, os, json, subprocess, re, shutil, time
 from datetime import datetime
 from pathlib import Path
+
+HERE = Path(__file__).parent
+sys.path.insert(0, str(HERE))
+from vl_utils import VL_MODEL, log, call_ollama_vl
 
 INBOUND    = Path("/home/apbrandom/.openclaw/media/inbound")
 VAULT      = Path("/home/apbrandom/.openclaw/workspace/vault")
 SHIPS      = VAULT / "ships"
 EVENTS     = VAULT / "events"
 SHIPS_DOCS = VAULT / "ships_docs"
-OLLAMA     = "http://localhost:11434/api/generate"
-VL_MODEL   = "qwen3-vl:latest"
 PROMPT     = ("Это скан Акта Приёма-Передачи (АПП, форма 117/OPS, CRANESHIP). "
               "Извлеки все поля в JSON. Пустые/нечитаемые — null.\n"
               "Поля: date (DD.MM.YYYY), form_number, ship_from, person_from, role_from, "
@@ -69,36 +71,8 @@ def vram_status() -> str:
 
 
 def vl_extract(png):
-    img_b64 = base64.b64encode(png.read_bytes()).decode()
-    req = {"model": VL_MODEL, "prompt": PROMPT,
-           "images": [img_b64], "stream": False, "options": {"temperature": 0.1}}
-    req_file = Path("/tmp/vl_req.json")
-    req_file.write_text(json.dumps(req))
-    for attempt in range(3):
-        r = subprocess.run(["curl", "-s", OLLAMA, "-d", f"@{req_file}"],
-                           capture_output=True, text=True, timeout=600)
-        if r.stdout.strip():
-            try:
-                if json.loads(r.stdout).get("response", "").strip():
-                    break
-            except Exception:
-                break
-        if attempt < 2:
-            print(f"[VL      ] retry {attempt+1}/3 — жду 30 сек...", flush=True)
-            time.sleep(30)
-    if not r.stdout.strip():
-        raise RuntimeError(f"Ollama вернул пустой ответ после 3 попыток (exit={r.returncode})")
-    try:
-        resp = json.loads(r.stdout)
-    except json.JSONDecodeError:
-        preview = r.stdout[:120].replace('\n', '\\n')
-        raise RuntimeError(f"Ollama вернул невалидный JSON (len={len(r.stdout)}): {preview!r}")
-    if "error" in resp:
-        raise RuntimeError(f"Ollama error: {resp['error']}")
-    raw = resp["response"].strip()
-    if not raw:
-        raise RuntimeError("qwen3-vl вернул пустой response (модель ещё остывает?)")
-    raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("`").strip()
+    raw = call_ollama_vl(png, PROMPT, retries=3, retry_delay=30,
+                         timeout=600, req_file="/tmp/vl_req.json")
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
@@ -260,10 +234,6 @@ extraction_method: qwen3-vl
     EVENTS.mkdir(exist_ok=True)
     event_file.write_text(content, encoding="utf-8")
     return event_file
-
-def log(tag, msg):
-    print(f"[{tag:<8}] {msg}", flush=True)
-
 
 def process_one(pdf, ships):
     t0 = time.time()

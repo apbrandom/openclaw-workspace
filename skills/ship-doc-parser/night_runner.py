@@ -4,7 +4,7 @@ Night PDF runner — запускается в 00:00 systemd таймером, �
 Обрабатывает очередь из queue.json, сохраняет checkpoint после каждой страницы.
 Утром шлёт итог в Telegram.
 """
-import sys, json, base64, subprocess, re, time, argparse
+import sys, json, time, argparse
 from datetime import datetime, time as dtime
 from pathlib import Path
 
@@ -14,10 +14,9 @@ import requests
 HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE))
 import pdf_queue
+from vl_utils import VL_MODEL, log, call_ollama_vl
 
 STOP_AT   = dtime(7, 0)
-OLLAMA    = "http://localhost:11434/api/generate"
-VL_MODEL  = "qwen3-vl:latest"
 VAULT     = Path("/home/apbrandom/.openclaw/workspace/vault")
 SHIPS_DOCS = VAULT / "ships_docs"
 TELEGRAM_CHAT_ID = 299387691
@@ -70,22 +69,11 @@ def render_page_png(pdf_path: Path, page_num: int) -> Path:
 
 
 def vl_extract(png: Path) -> dict:
-    img_b64 = base64.b64encode(png.read_bytes()).decode()
-    req = {
-        "model": VL_MODEL,
-        "prompt": GENERIC_PROMPT,
-        "images": [img_b64],
-        "stream": False,
-        "options": {"temperature": 0.1},
-    }
-    req_file = Path("/tmp/night_vl_req.json")
-    req_file.write_text(json.dumps(req))
-    r = subprocess.run(
-        ["curl", "-s", OLLAMA, "-d", f"@{req_file}"],
-        capture_output=True, text=True, timeout=300,
-    )
-    raw = json.loads(r.stdout)["response"].strip()
-    raw = re.sub(r"^```[a-z]*\n?", "", raw).rstrip("`").strip()
+    try:
+        raw = call_ollama_vl(png, GENERIC_PROMPT, retries=1, timeout=300,
+                             req_file="/tmp/night_vl_req.json")
+    except RuntimeError as e:
+        return {"error": str(e), "parse_error": True}
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
@@ -120,9 +108,6 @@ def process_item(item: dict) -> str:
 
     cp_data = load_checkpoint(result_dir)
     start_page = item.get("checkpoint_page", 0)
-
-    def log(tag, msg):
-        print(f"[{tag:<8}] {msg}", flush=True)
 
     log("PDF", f"Получен файл: {item['filename']} ({item['pages']} стр, ≈{item['estimated_minutes']} мин)")
     if start_page > 0:

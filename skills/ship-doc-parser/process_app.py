@@ -104,6 +104,47 @@ def vl_extract(png):
     except json.JSONDecodeError:
         raise RuntimeError(f"qwen3-vl вернул невалидный JSON: {raw[:120]!r}")
 
+def sanitize_str(s, maxlen=200):
+    """Удалить управляющие символы (вкл. \\n), схлопнуть пробелы, обрезать. None если пусто."""
+    if not s or not isinstance(s, str):
+        return None
+    cleaned = re.sub(r"[\x00-\x08\x0a-\x1f\x7f]", " ", s).strip()
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned[:maxlen] if cleaned else None
+
+def validate_payload(data):
+    """Schema-валидация ответа qwen3-vl. Защита от prompt injection через PDF.
+    Возвращает очищенный dict, либо raises ValueError при невалидной структуре."""
+    if not isinstance(data, dict):
+        raise ValueError(f"VL ответ не dict: {type(data).__name__}")
+
+    string_fields = ["date", "form_number", "ship_from", "person_from",
+                     "role_from", "ship_to", "person_to", "role_to",
+                     "destination", "category"]
+    clean = {}
+    for f in string_fields:
+        clean[f] = sanitize_str(data.get(f))
+
+    if clean["date"]:
+        try:
+            datetime.strptime(clean["date"], "%d.%m.%Y")
+        except ValueError:
+            clean["date"] = None
+
+    items = data.get("items")
+    clean_items = []
+    if isinstance(items, list):
+        for it in items[:100]:
+            if not isinstance(it, dict):
+                continue
+            clean_items.append({
+                "name": sanitize_str(it.get("name"), 150) or "?",
+                "unit": sanitize_str(it.get("unit"), 20) or "",
+                "qty": sanitize_str(str(it.get("qty", "")), 20) or "",
+            })
+    clean["items"] = clean_items
+    return clean
+
 def normalize(s):
     if not s:
         return ""
@@ -236,7 +277,8 @@ def process_one(pdf, ships):
 
     log("VL", f"Запускаю {VL_MODEL} — извлечение полей АПП...  [{vram_status()}]")
     t = time.time()
-    data = vl_extract(png)
+    raw = vl_extract(png)
+    data = validate_payload(raw)
     elapsed = time.time() - t
     fields_found = sum(1 for v in data.values() if v)
     log("VL", f"Поля извлечены за {elapsed:.0f} сек  ({fields_found} непустых из {len(data)})")

@@ -8,10 +8,11 @@
       "pages": 6,
       "estimated_minutes": 2,
       "added_at": "2026-05-16T13:55:53",
-      "status": "pending",
-      "checkpoint_page": 0,
-      "result_dir": null,
-      "error": null
+      "status": "done",
+      "checkpoint_page": 6,
+      "result_dir": "/home/apbrandom/.openclaw/workspace/vault/ships_docs/queue_results/95cd3b5d",
+      "error": null,
+      "done_at": "2026-05-17T00:01:35"
     }
   ]
 }

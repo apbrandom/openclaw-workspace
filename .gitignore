@@ -26,6 +26,10 @@ tools-venv/
 # Archives
 _archive_*/
 
+# Python bytecode
+__pycache__/
+*.pyc
+
 # Temp / OS
 *.tmp
 .DS_Store

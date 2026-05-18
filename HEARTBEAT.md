@@ -50,7 +50,7 @@ If uncommitted changes → note it, report if non-trivial.
 | Время | Задание | Что делает |
 |---|---|---|
 | `02:07` | `system-health-nightly` | temp cleanup, SQLite size, disk, port check |
-| `03:00` | `dream-nightly` | vault health, memory distillation, inbound дедупликация, git commit, **Tier 2 ship synthesis** |
+| `03:00` | `dream-nightly` | vault health, **Tier 2 ship synthesis**, **Notion sync**, git commit |
 | `03:00` | `Memory Dreaming Promotion` | managed by memory-core, LanceDB |
 | `09:00` | `dream-morning-report` | отчёт о ночном dream → Telegram |
 | `09:00 пн-пт` | `fleet-morning-brief` | сводка по флоту → Telegram |

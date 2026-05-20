@@ -5,13 +5,46 @@ description: Детерминированное создание и обновл
 
 # ship-update
 
-Три детерминированных скрипта:
+Четыре детерминированных скрипта:
 
 - `resolve_ship.py` — резолвит свободный текст → каноническое имя (ВСЕГДА первый шаг)
 - `update_ship.py` — обновляет существующую карточку (Tier-1 поля + история)
+- `render_card.py` — рендерит HTML-карточку для Telegram (Шаблон 2)
 - `create_ship.py` — создаёт пустую craneship-карточку из шаблона
 
 **Используй ТОЛЬКО эти скрипты для правки/создания `vault/ships/*.md`.** НЕ используй Edit/Write напрямую — frontmatter и секции легко повредить.
+
+## render_card.py
+
+Читает vault-файл → выводит готовую HTML-строку для Telegram (parse_mode=HTML). **Используй вместо ручного форматирования карточки.**
+
+### Вызов
+
+```bash
+/home/apbrandom/.openclaw/tools-venv/bin/python \
+  /home/apbrandom/.openclaw/workspace/skills/ship-update/render_card.py \
+  --name MODUS
+```
+
+С резолвингом алиаса (кириллица, любой регистр):
+
+```bash
+/home/apbrandom/.openclaw/tools-venv/bin/python \
+  /home/apbrandom/.openclaw/workspace/skills/ship-update/render_card.py \
+  --name Модус --auto-resolve
+```
+
+Или через JSON stdin:
+
+```bash
+echo '{"name":"MODUS"}' | /home/apbrandom/.openclaw/tools-venv/bin/python \
+  /home/apbrandom/.openclaw/workspace/skills/ship-update/render_card.py
+```
+
+### Ответ
+
+Готовая HTML-строка на stdout. Отправь её в Telegram дословно с `parse_mode=HTML`.
+Exit 0 — успех. Exit 2 — ошибка (сообщение в stderr).
 
 ## resolve_ship.py
 

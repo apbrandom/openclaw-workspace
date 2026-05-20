@@ -271,7 +271,25 @@ def update(payload: dict[str, Any], auto_resolve: bool = False) -> str:
         body = update_frontmatter_type(body, type_str.strip())
 
     atomic_write(ship_path, body)
+    _refresh_card(name)
     return f"✓ {name} updated ({ship_path.relative_to(WORKSPACE)})"
+
+
+def _refresh_card(name: str) -> None:
+    """Regenerate vault/ship_cards/{name}.html after update. Silent on failure."""
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "render_card", Path(__file__).parent / "render_card.py"
+        )
+        mod = importlib.util.module_from_spec(spec)   # type: ignore[arg-type]
+        spec.loader.exec_module(mod)                  # type: ignore[union-attr]
+        html = mod.render(name)
+        cards_dir = WORKSPACE / "vault" / "ship_cards"
+        cards_dir.mkdir(parents=True, exist_ok=True)
+        (cards_dir / f"{name}.html").write_text(html, encoding="utf-8")
+    except Exception:
+        pass
 
 
 def main() -> None:

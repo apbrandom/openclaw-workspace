@@ -144,7 +144,15 @@ echo '{"query":"Модус"}' | /home/apbrandom/.openclaw/tools-venv/bin/python 
 
 ### Шаблон 2 — карточка одного судна
 
-Читай `vault/ship_cards/{CANONICAL_NAME}.html` → отправь содержимое дословно с `parse_mode=HTML`. Файл обновляется автоматически после каждого `update_ship.py`. Если файл не найден: запусти `render_card.py --name {NAME} --auto-resolve` и отправь вывод.
+**СТРОГО:** запусти команду, вывод отправь verbatim с `parse_mode=HTML`. НЕ переформатируй, НЕ добавляй слов, НЕ пересказывай — только вывод команды:
+
+```bash
+/home/apbrandom/.openclaw/tools-venv/bin/python \
+  /home/apbrandom/.openclaw/workspace/skills/ship-update/render_card.py \
+  --name {CANONICAL_NAME}
+```
+
+Вывод уже содержит `<b>`, `<blockquote>` — это готовый HTML для Telegram. Не трогай.
 
 ### Шаблон 1 — список «мои суда»
 

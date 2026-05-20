@@ -118,15 +118,18 @@ This is a starting point. Add your own conventions, style, and rules as you figu
 
 При сообщении от `7622255068` соблюдай ВСЕ пять. Полная логика — `programs/forwarded-message-triage.md`.
 
-1. **Имена.** Перед правкой ВСЕГДА: `ls vault/ships/myship/` и `ls vault/ships/craneship/`. Канон Вадима: `vault/ships/myship/ATLAS_1.md`, `vault/ships/myship/TISA.md`, `vault/ships/myship/PRUT.md`, `vault/ships/myship/TURAN.md`. Craneship: `vault/ships/craneship/*.md`. Буксиры (НЕ суда): `vault/tugboats.md`. Незнакомое имя → ОДНА строка вопроса: `Новое имя «{NAME}»: судно Craneship / буксир / чужое?`. Дальше: «Craneship» → `create_ship.py`+`update_ship.py`; «буксир» → строка в `vault/tugboats.md`; «чужое» → `vault/events/foreign/{NAME}-{YYYY-MM-DD}.md`.
+1. **Имена.** Канон: `vault/ships/myship/` (ATLAS_1, TISA, PRUT, TURAN) и `vault/ships/craneship/`. Незнакомое имя в сообщении — не создавать карточку, не спрашивать. Просто упомяни его в событии нашего судна (например: «отшвартовка к NOTA APP»). Только наши суда получают карточки.
 
 2. **Не выдумывай данные.** Записывай ТОЛЬКО факты из исходного сообщения. Нет данных в сообщении — оставь поле пустым. Пустое лучше галлюцинации.
 
 3. **Не отчитывайся о невыполненном.** Без реального tool call с успехом — НЕ пиши «обновлено».
 
-4. **Tier 1 = ТОЛЬКО `update_ship.py`.** НИКОГДА `Edit`/`Write` на `vault/ships/myship/*.md` — повредит frontmatter и секции. Спецификация — `skills/ship-update/SKILL.md`. `## Технические характеристики` — Tier 2, не трогать.
+4. **Tier 1 = ТОЛЬКО `update_ship.py`, затем `send_card.py`.** Порядок:
+   - `update_ship.py` → обновить vault
+   - `send_card.py --name {SHIP} --chat-id {CHAT_ID}` → отправить карточку
+   НИКОГДА `Edit`/`Write` на `vault/ships/*.md`. `## Технические характеристики` — Tier 2, не трогать.
 
-5. **Ответ ≤ 80 символов**, формат `✓ {SHIP}: {суть}, {HH:MM}`. Для Tier 2 — молча. ЗАПРЕЩЕНО: «Что дальше?», отчёты, эмодзи кроме `✓`.
+5. **Ответ = только вывод `send_card.py`** (≤20 символов). АБСОЛЮТНО ЗАПРЕЩЕНО: любые вопросы («Что дальше?», «Что ещё?»), объяснения, отчёты. Ответ заканчивается на `✓`, точка.
 
 ## Status Query — три шаблона сводки
 
@@ -144,15 +147,16 @@ echo '{"query":"Модус"}' | /home/apbrandom/.openclaw/tools-venv/bin/python 
 
 ### Шаблон 2 — карточка одного судна
 
-**СТРОГО:** запусти команду, вывод отправь verbatim с `parse_mode=HTML`. НЕ переформатируй, НЕ добавляй слов, НЕ пересказывай — только вывод команды:
+Запусти и отправь вывод как ответ:
 
 ```bash
 /home/apbrandom/.openclaw/tools-venv/bin/python \
-  /home/apbrandom/.openclaw/workspace/skills/ship-update/render_card.py \
-  --name {CANONICAL_NAME}
+  /home/apbrandom/.openclaw/workspace/skills/ship-update/send_card.py \
+  --name {CANONICAL_NAME} --chat-id {CHAT_ID}
 ```
 
-Вывод уже содержит `<b>`, `<blockquote>` — это готовый HTML для Telegram. Не трогай.
+`CHAT_ID` — из метаданных сообщения (поле `chat_id`, без префикса `telegram:`).
+Вывод команды = твой ответ. Ничего не добавляй.
 
 ### Шаблон 1 — список «мои суда»
 

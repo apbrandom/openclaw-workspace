@@ -124,12 +124,23 @@ This is a starting point. Add your own conventions, style, and rules as you figu
 
 3. **Не отчитывайся о невыполненном.** Без реального tool call с успехом — НЕ пиши «обновлено».
 
-4. **Tier 1 = ТОЛЬКО `update_ship.py`, затем `send_card.py`.** Порядок:
-   - `update_ship.py` → обновить vault
-   - `send_card.py --name {SHIP} --chat-id {CHAT_ID}` → отправить карточку
-   НИКОГДА `Edit`/`Write` на `vault/ships/*.md`. `## Технические характеристики` — Tier 2, не трогать.
+4. **Tier 1 = ТОЛЬКО `tier1_pipeline.py`.** Один вызов делает всё: resolve → update vault → send card.
 
-5. **Ответ = только вывод `send_card.py`** (≤20 символов). АБСОЛЮТНО ЗАПРЕЩЕНО: любые вопросы («Что дальше?», «Что ещё?»), объяснения, отчёты. Ответ заканчивается на `✓`, точка.
+```bash
+echo '{
+  "name": "{SHIP}",
+  "position": "{ПОЗИЦИЯ}",
+  "status": "{СТАТУС}",
+  "last_update_dt": "{YYYY-MM-DD HH:MM}",
+  "events": ["{HH:MM} — {текст}", ...]
+}' | /home/apbrandom/.openclaw/tools-venv/bin/python \
+  /home/apbrandom/.openclaw/workspace/skills/ship-update/tier1_pipeline.py \
+  --chat-id {CHAT_ID}
+```
+
+   НИКОГДА `Edit`/`Write`/`update_ship.py` напрямую на `vault/ships/*.md`. `## Технические характеристики` — Tier 2, не трогать.
+
+5. **Ответ = только вывод `tier1_pipeline.py`** (≤20 символов). АБСОЛЮТНО ЗАПРЕЩЕНО: любые вопросы («Что дальше?», «Что ещё?»), объяснения, отчёты. Ответ заканчивается на `✓`, точка.
 
 ## Status Query — три шаблона сводки
 

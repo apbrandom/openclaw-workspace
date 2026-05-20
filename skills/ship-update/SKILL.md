@@ -5,14 +5,33 @@ description: Детерминированное создание и обновл
 
 # ship-update
 
-Четыре детерминированных скрипта:
+Пять детерминированных скриптов:
 
-- `resolve_ship.py` — резолвит свободный текст → каноническое имя (ВСЕГДА первый шаг)
+- **`tier1_pipeline.py`** — **ГЛАВНЫЙ** для Tier-1 forwarded-сообщений: resolve → update → send_card одним вызовом
+- `resolve_ship.py` — резолвит свободный текст → каноническое имя
 - `update_ship.py` — обновляет существующую карточку (Tier-1 поля + история)
 - `render_card.py` — рендерит HTML-карточку для Telegram (Шаблон 2)
 - `create_ship.py` — создаёт пустую craneship-карточку из шаблона
 
 **Используй ТОЛЬКО эти скрипты для правки/создания `vault/ships/*.md`.** НЕ используй Edit/Write напрямую — frontmatter и секции легко повредить.
+
+## tier1_pipeline.py
+
+Для Tier-1 (forwarded dispatcher message) — ЕДИНСТВЕННЫЙ правильный инструмент. Делает всё: resolve → update vault → send card к указанному chat_id.
+
+```bash
+echo '{
+  "name": "BP_01",
+  "position": "РПР №3",
+  "status": "на якоре",
+  "last_update_dt": "2026-05-20 14:10",
+  "events": ["14:10 — встали на якорь в РПР №3"]
+}' | /home/apbrandom/.openclaw/tools-venv/bin/python \
+  /home/apbrandom/.openclaw/workspace/skills/ship-update/tier1_pipeline.py \
+  --chat-id {CHAT_ID}
+```
+
+Выход: `✓ {CANONICAL}: карточка отправлена`. Это и есть твой ответ пользователю.
 
 ## render_card.py
 
@@ -68,8 +87,8 @@ echo '{"query":"Модус"}' | /home/apbrandom/.openclaw/tools-venv/bin/python 
 ```
 
 - `found: true` → используй `canonical` как `name` для `update_ship.py`
-- `found: false` → задай ОДНУ строку: `Новое имя «{query}»: судно Craneship / буксир / чужое?`
-- Если ответ содержит `"partial": true` → совпадение нечёткое, добавь к ответу уточнение в скобках
+- `found: false` → судно не наше. Для Tier-1 (forwarded msg): упомяни имя в событии нашего судна. Не задавай вопросов.
+- Если ответ содержит `"partial": true` → совпадение нечёткое, уточни у пользователя
 
 ## update_ship.py
 

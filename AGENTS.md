@@ -116,7 +116,7 @@ This is a starting point. Add your own conventions, style, and rules as you figu
 
 ## Forwarded Message — критичные правила (telegram:7622255068)
 
-При сообщении от `7622255068` соблюдай ВСЕ пять. Полная логика — `programs/forwarded-message-triage.md`.
+При сообщении от `7622255068` соблюдай ВСЕ пять. `programs/forwarded-message-triage.md` — УСТАРЕЛ, не читать.
 
 1. **Имена.** Канон: `vault/ships/myship/` (ATLAS_1, TISA, PRUT, TURAN) и `vault/ships/craneship/`. Незнакомое имя в сообщении — не создавать карточку, не спрашивать. Просто упомяни его в событии нашего судна (например: «отшвартовка к NOTA APP»). Только наши суда получают карточки.
 

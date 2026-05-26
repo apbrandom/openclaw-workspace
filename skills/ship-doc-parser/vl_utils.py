@@ -24,7 +24,7 @@ def call_ollama_vl(png, prompt, *, retries=1, retry_delay=30,
     """
     img_b64 = base64.b64encode(Path(png).read_bytes()).decode()
     req = {"model": VL_MODEL, "prompt": prompt, "images": [img_b64],
-           "stream": False, "options": {"temperature": 0.1}}
+           "stream": False, "options": {"temperature": 0.1, "repeat_penalty": 1.15, "num_predict": 2048}}
     Path(req_file).write_text(json.dumps(req))
 
     r = None

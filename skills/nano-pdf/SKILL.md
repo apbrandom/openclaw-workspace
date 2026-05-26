@@ -1,3 +1,8 @@
+---
+name: nano-pdf
+description: Создание и редактирование PDF — reportlab (генерация), PyMuPDF/fitz (чтение, правка, рендер)
+---
+
 # nano-pdf — PDF Skill
 
 **Venv:** `~/.openclaw/tools-venv/bin/python`  

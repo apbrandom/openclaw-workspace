@@ -1,3 +1,8 @@
+---
+name: ship-doc-parser
+description: Парсинг входящих PDF судовых документов (АПП, сертификаты) через vision LLM qwen3-vl → обновление vault/ships карточек
+---
+
 # SKILL: ship-doc-parser
 
 **Version:** 2.0 (vision-primary)

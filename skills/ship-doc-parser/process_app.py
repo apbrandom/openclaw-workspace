@@ -129,7 +129,7 @@ def normalize(s):
 
 def load_ships():
     ships = {}
-    for f in SHIPS.glob("*.md"):
+    for f in SHIPS.glob("**/*.md"):
         text = f.read_text(encoding="utf-8")
         m = re.search(r"^name:\s*(.+)$", text, re.MULTILINE)
         if not m:

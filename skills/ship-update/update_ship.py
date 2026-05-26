@@ -58,6 +58,11 @@ STATUS_FIELDS = {
     "last_update_dt": "Обновлено:",
 }
 
+VALID_STATUSES = {
+    "на якоре", "на ходу", "грузовые",
+    "швартовка", "ожидание", "в ремонте", "буксировка",
+}
+
 
 def die(msg: str, code: int = 2) -> None:
     print(msg, file=sys.stderr)
@@ -216,6 +221,10 @@ def validate(payload: dict[str, Any]) -> None:
         v = payload.get(k)
         if v is not None and (not isinstance(v, str) or not v.strip()):
             die(f"⚠ '{k}' if set must be non-empty string")
+
+    status = payload.get("status")
+    if status is not None and status.strip() not in VALID_STATUSES:
+        die(f"⚠ invalid status {status.strip()!r}, allowed: {', '.join(sorted(VALID_STATUSES))}")
 
     events = payload.get("events", [])
     if not isinstance(events, list) or not all(isinstance(e, str) and e.strip() for e in events):

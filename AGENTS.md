@@ -114,71 +114,8 @@ This is a starting point. Add your own conventions, style, and rules as you figu
 
 ---
 
-## Forwarded Message — критичные правила (telegram:7622255068)
+## Суда
 
-При сообщении от `7622255068` соблюдай ВСЕ пять. `programs/forwarded-message-triage.md` — УСТАРЕЛ, не читать.
-
-1. **Имена.** Канон: `vault/ships/myship/` (ATLAS_1, TISA, PRUT, TURAN) и `vault/ships/craneship/`. Незнакомое имя в сообщении — не создавать карточку, не спрашивать. Просто упомяни его в событии нашего судна (например: «отшвартовка к NOTA APP»). Только наши суда получают карточки.
-
-2. **Не выдумывай данные.** Записывай ТОЛЬКО факты из исходного сообщения. Нет данных в сообщении — оставь поле пустым. Пустое лучше галлюцинации.
-
-3. **Не отчитывайся о невыполненном.** Без реального tool call с успехом — НЕ пиши «обновлено».
-
-4. **Tier 1 = ТОЛЬКО `tier1_pipeline.py`.** Один вызов делает всё: resolve → update vault → send card.
-
-```bash
-echo '{
-  "name": "{SHIP}",
-  "position": "{ПОЗИЦИЯ}",
-  "status": "{СТАТУС}",
-  "last_update_dt": "{YYYY-MM-DD HH:MM}",
-  "events": ["{HH:MM} — {текст}", ...]
-}' | /home/apbrandom/.openclaw/tools-venv/bin/python \
-  /home/apbrandom/.openclaw/workspace/skills/ship-update/tier1_pipeline.py \
-  --chat-id {CHAT_ID}
-```
-
-   НИКОГДА `Edit`/`Write`/`update_ship.py` напрямую на `vault/ships/*.md`. `## Технические характеристики` — Tier 2, не трогать.
-
-5. **Ответ = только вывод `tier1_pipeline.py`** (≤20 символов). АБСОЛЮТНО ЗАПРЕЩЕНО: любые вопросы («Что дальше?», «Что ещё?»), объяснения, отчёты. Ответ заканчивается на `✓`, точка.
-
-## Status Query — три шаблона сводки
-
-**Правило первого шага:** если сообщение — одно слово или короткая фраза (≤3 слов), сначала вызови `resolve_ship.py`. Если `"found": true` → это запрос карточки, сразу Шаблон 2. Не угадывай, не интерпретируй — проверяй скриптом.
-
-```bash
-echo '{"query":"Модус"}' | /home/apbrandom/.openclaw/tools-venv/bin/python \
-  /home/apbrandom/.openclaw/workspace/skills/ship-update/resolve_ship.py
-```
-
-Триггеры → шаблоны:
-- «мои суда», «сводка по моим» → **Шаблон 1** (4 моих судна)
-- `resolve_ship.py` вернул `found: true`, или «статус/что с/как/по {судно}» → **Шаблон 2** (одно судно)
-- «флот», «сводка по флоту», «все суда» → **Шаблон 3** (мои + Craneship из `vault/ships/craneship/*.md`)
-
-### Шаблон 2 — карточка одного судна
-
-Запусти и отправь вывод как ответ:
-
-```bash
-/home/apbrandom/.openclaw/tools-venv/bin/python \
-  /home/apbrandom/.openclaw/workspace/skills/ship-update/send_card.py \
-  --name {CANONICAL_NAME} --chat-id {CHAT_ID}
-```
-
-`CHAT_ID` — из метаданных сообщения (поле `chat_id`, без префикса `telegram:`).
-Вывод команды = твой ответ. Ничего не добавляй.
-
-### Шаблон 1 — список «мои суда»
-
-Plain text, без HTML. Эмодзи 🚢, буллет •.
-```
-🚢 Мои суда · DD.MM HH:MM
-
-{SHIP}: {Позиция}, {Статус}
-...
-```
-
-### Шаблон 3 — весь флот
-
-Идентично Шаблону 1, но включает все суда из `vault/ships/myship/*.md` и `vault/ships/craneship/*.md`.
+Флот: `vault/ships/myship/` (ATLAS_1, TISA, PRUT, TURAN) и `vault/ships/craneship/`.
+Скрипты: `skills/ship-update/tier1_pipeline.py`, `send_card.py`, `resolve_ship.py`.
+Детальные правила обработки диспетч-сообщений — в `skills/ship-update/SKILL.md`.

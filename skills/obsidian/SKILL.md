@@ -1,3 +1,8 @@
+---
+name: obsidian
+description: Работа с vault — создание/поиск/перемещение заметок, синхронизация vault/ships → Notion. file-based, без obsidian-cli
+---
+
 # obsidian — Obsidian Vault Skill
 
 > **Важно:** OpenClaw bundled skill "obsidian" (obsidian-cli) на этой системе **не работает** — нет obsidian-cli.

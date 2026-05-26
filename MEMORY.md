@@ -1,13 +1,5 @@
 ## Система и инфраструктура
 
-### Железо
-- Минисфорум X1 Pro (hostname: X1PRO)
-- CPU: AMD Ryzen AI 9 HX370 w/ Radeon 890M, 12 ядер, 24 потока
-- RAM: 32 GB DDR5 5600 MHz (WSL2 ограничен 22 GB через .wslconfig)
-- GPU: RTX 5070 Ti (16 GB VRAM) через eGPU Oculink
-- iGPU: AMD Radeon 890M (1024 MB, интегрированный)
-- NPU: AMD XDNA 2 (50 TOPS)
-- FP8: включено, Flash Attention: включено
 
 ### ОС и окружение
 - Windows 11 хост

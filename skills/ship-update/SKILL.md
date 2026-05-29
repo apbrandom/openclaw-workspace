@@ -122,7 +122,7 @@ echo '<JSON>' | /home/apbrandom/.openclaw/tools-venv/bin/python \
 
 ## Поведение
 
-- Ищет файл в `vault/ships/{name}.md` затем в `vault/ships/craneship/{name}.md`
+- Ищет файл в `vault/ships/myship/{name}.md` затем в `vault/ships/craneship/{name}.md`
 - Если не нашёл — ошибка с листингом известных имён
 - Каждое поле заменяется ЦЕЛИКОМ (никакой склейки старого + нового)
 - События дедуплицируются по точному совпадению строки

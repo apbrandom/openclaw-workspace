@@ -1,57 +1,21 @@
-# TOOLS.md - Local Notes
+# TOOLS.md
 
-Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
+Заметки о локальных инструментах. Какие инструменты существуют — OpenClaw знает сам.
 
-## What Goes Here
+## Vault
 
-Things like:
-
-- Camera names and locations
-- SSH hosts and aliases
-- Preferred voices for TTS
-- Speaker/room names
-- Device nicknames
-- Anything environment-specific
-
-## Examples
-
-```markdown
-### Cameras
-
-- living-room → Main area, 180° wide angle
-- front-door → Entrance, motion-triggered
-
-### SSH
-
-- home-server → 192.168.1.100, user: admin
-
-### TTS
-
-- Preferred voice: "Nova" (warm, slightly British)
-- Default speaker: Kitchen HomePod
-```
-
-## Why Separate?
-
-Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
-
----
-
-Add whatever helps you do your job. This is your cheat sheet.
-
-## Vault & Obsidian
-
-- **OBSIDIAN_VAULT:** `/home/apbrandom/.openclaw/workspace/vault`
-  Открыть в Obsidian: Open Folder as Vault → выбрать эту папку.
-  Структура: `ships/` (карточки), `events/` (АПП и события), `ships_docs/` (PDF по судам).
+- **Путь:** `/home/apbrandom/.openclaw/workspace/vault`
+- Структура: `ships/myship/`, `ships/craneship/`, `ships_docs/`, `events/`
+- Obsidian: Open Folder as Vault → выбрать эту папку
 
 ## Ship Document Intake
 
 - **Inbound PDF:** `/home/apbrandom/.openclaw/media/inbound/`
-- **Скрипт обработки:** `/home/apbrandom/.openclaw/workspace/skills/ship-doc-parser/process_app.py`
-- **Запуск:** `/home/apbrandom/.openclaw/tools-venv/bin/python /home/apbrandom/.openclaw/workspace/skills/ship-doc-parser/process_app.py`
-- **Vision model:** `qwen3-vl:latest` через `http://localhost:11434`
+- **Скрипт:** `/home/apbrandom/.openclaw/workspace/skills/ship-doc-parser/process_app.py`
+- **Запуск:** `/home/apbrandom/.openclaw/tools-venv/bin/python .../process_app.py`
+- **Vision model:** `qwen3-vl:latest` через Ollama
 
-## Related
+## Python venv
 
-- [Agent workspace](/concepts/agent-workspace)
+- **Путь:** `/home/apbrandom/.openclaw/tools-venv/bin/python`
+- Установлены: PyMuPDF (fitz), requests, и скрипты ship-update

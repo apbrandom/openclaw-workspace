@@ -1,0 +1,248 @@
+{
+  "version": 1,
+  "jobs": [
+    {
+      "id": "8a068e25-f9d5-4e28-a1d1-285a8977a304",
+      "name": "dream-morning-report",
+      "description": "Утренний Telegram-отчёт о ночном dream",
+      "enabled": true,
+      "createdAtMs": 1778946295499,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 8 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Прочитай самый свежий файл memory/dream-*.md в /home/apbrandom/.openclaw/workspace/memory/. Напиши краткое сообщение (максимум 3 строки) о том что было сделано ночью: что дистиллировано в MEMORY.md, состояние vault, был ли git commit. Начни с '☀️ Dream:'. Если dream-файла нет — напиши '☀️ Dream: нет отчёта за сегодняшнюю ночь'.",
+        "timeoutSeconds": 300
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "last",
+        "to": "299387691"
+      },
+      "state": {}
+    },
+    {
+      "id": "aa3ed69d-7050-4bd9-9a73-aa6406d48764",
+      "name": "fleet-morning-brief",
+      "description": "Ежедневная сводка по флоту, пн-пт в 9:00",
+      "enabled": true,
+      "createdAtMs": 1778947529866,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 9 * * 1-5"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Fleet Morning Brief. Составь сводку по флоту для Вадима.\n\nДля каждого судна в /home/apbrandom/.openclaw/workspace/vault/ships/:\n1. Прочитай карточку судна (*.md файл)\n2. Извлеки: текущий район или порт, статус (на ходу / в порту / в ремонте / неизвестно), груз (с грузом / балласт / н/д)\n3. Найди последний event в /home/apbrandom/.openclaw/workspace/vault/events/ для этого судна (по имени в имени файла или содержимому)\n\nФормат сообщения (отправь именно это в Telegram):\n\n🚢 Fleet Brief — [день недели, дата]\n\n[ИМЯ СУДНА]\n  📍 [район / порт]\n  ⚓ [на ходу / в порту / в ремонте]  |  [с грузом / балласт / н/д]\n  📋 [дата] — [краткое описание последнего события]\n\n(повторить для каждого судна)\n\n📥 Входящих документов: [кол-во файлов в /home/apbrandom/.openclaw/media/inbound/ если есть, или 'нет']",
+        "timeoutSeconds": 300
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "last",
+        "to": "299387691"
+      },
+      "state": {}
+    },
+    {
+      "id": "3a0c485e-2d6d-4a8b-9fd9-d6c1b9c1761c",
+      "name": "daily-telegram-memory",
+      "description": "Ежесуточно в 23:00: дистиллировать Telegram-чат в daily memory",
+      "enabled": true,
+      "createdAtMs": 1778953806184,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 23 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "DAILY MEMORY DISTILL.\n\n1. Выполни: date '+%Y-%m-%d' — это ДАТА.\n\n2. Найди все файлы в /home/apbrandom/.openclaw/workspace/memory/ с именами вида ДАТА-*.md (например 2026-05-28-1001.md). Прочитай каждый — это сырые логи Telegram-сессий за день.\n\n3. Извлеки из всех файлов:\n- события по судам (ПРУТ, ТИСА, АТЛАС 1, ТУРАН, САЙГА): позиция, статус, груз, порт\n- решения и задачи Вадима\n- технические сбои (⚠️ Something went wrong, двойные ответы)\n- всё важное для памяти завтра\n\n4. Запиши в конец файла /home/apbrandom/.openclaw/workspace/memory/ДАТА.md:\n\n## Chat ДАТА\n- [пункт]\n(если ничего значимого — пиши «Значимых событий не зафиксировано»)\n\nСекцию ## Chat пишем ВСЕГДА, даже если дня было только «привет». Не отправляй сообщений Вадиму.",
+        "thinking": "off",
+        "timeoutSeconds": 180
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      },
+      "state": {}
+    },
+    {
+      "id": "5fb06922-1ebb-4105-8fb0-caa100154d5a",
+      "name": "evening-system-report",
+      "description": "Вечерняя сводка состояния систем в 22:00",
+      "enabled": true,
+      "createdAtMs": 1778953954105,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 21 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "EVENING REPORT. Запусти скрипт:\nbash /home/apbrandom/.openclaw/workspace/skills/evening-report.sh\n\nОтправь вывод скрипта как есть в Telegram (299387691). Без изменений, без добавлений.",
+        "thinking": "none",
+        "timeoutSeconds": 60
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "last",
+        "to": "299387691"
+      },
+      "state": {}
+    },
+    {
+      "id": "567ac371-acdf-4473-ad20-81e3c6d99998",
+      "name": "inbound-dedup",
+      "description": "Ежесуточно в 01:00: дедупликация inbound/ по basename (до ---)",
+      "enabled": true,
+      "createdAtMs": 1779023400000,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 1 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "INBOUND DEDUP. Выполни:\n/home/apbrandom/.openclaw/tools-venv/bin/python /home/apbrandom/.openclaw/workspace/skills/inbound-dedup.py\n\nПокажи вывод. Не отправляй сообщений Вадиму.",
+        "thinking": "none",
+        "timeoutSeconds": 60,
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "none"
+      },
+      "state": {}
+    },
+    {
+      "id": "564dc612-5c5e-4f2c-9f14-43f3617e5a45",
+      "name": "system-health-nightly",
+      "description": "Ночная техническая проверка: temp, disk, SQLite — запускается до dream-nightly",
+      "enabled": true,
+      "createdAtMs": 1778953806184,
+      "schedule": {
+        "kind": "cron",
+        "expr": "7 2 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "SYSTEM HEALTH NIGHTLY. Тихая техническая проверка, не сообщай Вадиму если всё в норме.\n\n1. TEMP CLEANUP\nУдали через trash (не rm) файлы /tmp/page-*.png и /tmp/*.pdf старше 1 часа. Запиши кол-во удалённых файлов.\n\n2. SQLITE SIZE\nВыполни: wc -c /home/apbrandom/.openclaw/memory/main.sqlite\nЕсли размер >500 MB — отправь предупреждение Вадиму в Telegram (299387691).\n\n3. DISK USAGE\nВыполни: df -h /home/apbrandom\nЕсли использование >85% — отправь предупреждение Вадиму в Telegram (299387691).\n\n4. PORT CHECK\nВыполни: ss -tlnp | grep -E '11434|18789|18791'\nЕсли Ollama (11434) или Gateway (18789/18791) слушают НЕ на 127.0.0.1 — это проблема, сообщи Вадиму немедленно.\n\nЗапиши результаты в /home/apbrandom/.openclaw/workspace/memory/YYYY-MM-DD.md (реальная дата) под секцией ## SysHealth [02:07].",
+        "thinking": "low",
+        "timeoutSeconds": 120
+      },
+      "delivery": {
+        "mode": "none",
+        "channel": "last"
+      },
+      "state": {}
+    },
+    {
+      "id": "36532a95-9760-47dc-b776-7e6ae1ab9d44",
+      "name": "Memory Dreaming Promotion",
+      "description": "[managed-by=memory-core.short-term-promotion] Promote weighted short-term recalls into MEMORY.md (limit=10, minScore=0.800, minRecallCount=3, minUniqueQueries=3, recencyHalfLifeDays=14, maxAgeDays=30).",
+      "enabled": true,
+      "createdAtMs": 1778959735005,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 3 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "__openclaw_memory_core_short_term_promotion_dream__",
+        "lightContext": true
+      },
+      "delivery": {
+        "mode": "none"
+      },
+      "state": {}
+    },
+    {
+      "id": "27044a2a-72c9-4d64-bca6-6931007c4e31",
+      "name": "ship-audit-daily",
+      "description": "Дневная сводка ship-audit в Telegram, 20:00",
+      "enabled": true,
+      "createdAtMs": 1779372526299,
+      "schedule": {
+        "kind": "cron",
+        "expr": "0 20 * * *"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Ship audit — дневная сводка в Telegram.\n\n1. Прочитай /home/apbrandom/.openclaw/workspace/vault/ship_audit.md\n2. Сформируй HTML-сообщение для Telegram (parse_mode=HTML):\n\n🛠 <b>Ship audit · DD.MM HH:MM</b>\n\n<blockquote>\n{если файл начинается с \"✓ Замечаний нет\" — пиши \"Замечаний нет. Все карточки выглядят согласованно.\"\n если есть замечания — список из ship_audit.md, до 10 строк, краткие формулировки}\n</blockquote>\n\n3. Отправь Вадиму (chat_id 299387691).\n4. НЕ запускай новый аудит — используй последний результат из ship_audit.md.",
+        "thinking": "none",
+        "timeoutSeconds": 180
+      },
+      "delivery": {
+        "mode": "announce",
+        "channel": "last",
+        "to": "299387691"
+      },
+      "state": {}
+    },
+    {
+      "id": "71b8aeb7-d7f8-42a3-8adb-1846562c53b1",
+      "agentId": "main",
+      "sessionKey": "agent:main:telegram:default:direct:7622255068",
+      "name": "fleet-morning-brief",
+      "enabled": true,
+      "createdAtMs": 1779773554288,
+      "schedule": {
+        "expr": "0 9 * * *",
+        "kind": "cron",
+        "tz": "Europe/Budapest"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "fleet-morning-brief"
+      },
+      "delivery": {
+        "channel": "telegram",
+        "mode": "announce",
+        "to": "7622255068"
+      },
+      "state": {}
+    },
+    {
+      "id": "402d428e-3d45-4693-bab1-2816dea44fa6",
+      "agentId": "telegram",
+      "sessionKey": "agent:telegram:main",
+      "name": "retry-intake-pipeline",
+      "enabled": false,
+      "deleteAfterRun": true,
+      "createdAtMs": 1780032909030,
+      "schedule": {
+        "at": "2026-05-29T05:40:00.000Z",
+        "kind": "at"
+      },
+      "sessionTarget": "isolated",
+      "wakeMode": "now",
+      "payload": {
+        "kind": "agentTurn",
+        "message": "Перезапустить intake pipeline для обработки новых файлов в inbound",
+        "model": "ollama/qwen3:14b"
+      },
+      "delivery": {
+        "channel": "telegram",
+        "mode": "announce",
+        "to": "Вадим"
+      },
+      "state": {}
+    }
+  ]
+}

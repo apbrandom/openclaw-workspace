@@ -29,3 +29,17 @@ pdftoppm -r 150 -png /path/file.pdf /tmp/page
 # Python PyMuPDF для сложной обработки
 ~/.openclaw/tools-venv/bin/python -c "import fitz; ..."
 ```
+
+## Promoted From Short-Term Memory (2026-06-01)
+
+<!-- openclaw-memory-promotion:memory:memory/2026-05-26-1230.md:9:12 -->
+- assistant: Привет, Вадим! Что делаем? assistant: ⚠️ Something went wrong while processing your request. Please try again, or use /new to start a fresh session. user: [OpenClaw heartbeat poll] assistant: HEARTBEAT_OK [score=0.883 recalls=0 avg=0.620 source=memory/2026-05-26-1230.md:9-12]
+<!-- openclaw-memory-promotion:memory:memory/2026-05-26-1230.md:13:16 -->
+- user: [OpenClaw heartbeat poll] assistant: HEARTBEAT_OK user: [OpenClaw heartbeat poll] assistant: HEARTBEAT_OK [score=0.883 recalls=0 avg=0.620 source=memory/2026-05-26-1230.md:13-16]
+
+## Promoted From Short-Term Memory (2026-06-02)
+
+<!-- openclaw-memory-promotion:memory:memory/2026-05-28-2231.md:9:9 -->
+- user: Conversation info (untrusted metadata): [score=0.853 recalls=0 avg=0.620 source=memory/2026-05-28-2231.md:9-9]
+<!-- openclaw-memory-promotion:memory:memory/2026-05-28-2231.md:12:15 -->
+- "chat_id": "telegram:299387691", "message_id": "1131", "sender_id": "299387691", "sender": "Vadim Vin", [score=0.853 recalls=0 avg=0.620 source=memory/2026-05-28-2231.md:12-15]

@@ -10,7 +10,7 @@ This is Vadim's personal OpenClaw workspace — the home directory for an AI ass
 
 ## Infrastructure
 
-**OpenClaw** (v2026.5.12) — the core AI gateway, Node.js, ports 18789/18791 (loopback only).
+**OpenClaw** (v2026.5.28) — the core AI gateway, Node.js, ports 18789/18791 (loopback only).
 
 ```bash
 systemctl --user status openclaw-gateway      # check status

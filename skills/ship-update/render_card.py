@@ -145,7 +145,7 @@ def parse_events(section: str, limit: int = 5) -> list[tuple[str, str]]:
     return results[-limit:][::-1]  # newest first
 
 
-def render(name: str, auto_resolve: bool = False) -> str:
+def render(name: str, auto_resolve: bool = False, events_limit: int = 5) -> str:
     if auto_resolve:
         name = try_resolve(name)
     path = find_ship_file(name)
@@ -171,7 +171,7 @@ def render(name: str, auto_resolve: bool = False) -> str:
     s_emoji, s_label = status_emoji_label(status_raw)
 
     # История событий
-    events = parse_events(get_section(body, "История событий"), limit=5)
+    events = parse_events(get_section(body, "История событий"), limit=events_limit)
 
     # Fallback updated_str from newest event
     if not updated_str and events:

@@ -14,6 +14,8 @@ Matching order (stops at first hit):
   1. Exact filename match (case-insensitive): "modus" → MODUS.md
   2. `name:` field in frontmatter (case-insensitive)
   3. Any entry in `aliases:` list (case-insensitive)
+  3.5 Token-exact (multi-word query): one ship uniquely matches a token → resolve
+      (forward titles like "Атлас-1 Атлас"). Ambiguous/no-match falls through.
   4. Partial / prefix match (≥4 chars) — returns first hit, marks `"partial": true`
 
 Exit 0 always (caller decides what to do with found=false).
@@ -90,6 +92,24 @@ def resolve(query: str) -> dict:
             if alias.lower() == q_lower:
                 return {"found": True, "canonical": p.stem,
                         "path": str(p.relative_to(WORKSPACE))}
+
+    # Pass 3.5: token-exact match — forward-шапка вида "Атлас-1 Атлас" (алиас +
+    # лишнее слово). Бьём запрос на токены; если РОВНО одно судно точно матчит
+    # какой-либо токен по stem/name/alias — резолвим. Неоднозначность ("Атлас" →
+    # ATLAS_1 и ATLAS_5) или промах → проваливаемся дальше. Чистый резолв имени.
+    tokens = [t for t in re.split(r"\s+", q) if t]
+    if len(tokens) > 1:
+        matched: dict[str, Path] = {}
+        for p, fm in cards:
+            keys = {p.stem.lower(), fm.get("name", "").lower()}
+            keys |= {a.lower() for a in fm.get("aliases", [])}
+            keys.discard("")
+            if any(tok.lower() in keys for tok in tokens):
+                matched[p.stem] = p
+        if len(matched) == 1:
+            p = next(iter(matched.values()))
+            return {"found": True, "canonical": p.stem,
+                    "path": str(p.relative_to(WORKSPACE))}
 
     # Pass 4: prefix / partial (≥4 chars)
     if len(q) >= 4:

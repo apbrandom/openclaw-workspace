@@ -186,7 +186,7 @@ def render(name: str, auto_resolve: bool = False, events_limit: int = 5) -> str:
     if tugboat and tugboat not in ("", "-", "[не задано]"):
         bq.append(f"🛥 Буксир: {tugboat}")
     bq.append("")
-    bq.append("📋 Журнал событий")
+    bq.append("📋 Бортовой журнал")
     if events:
         bq.extend(display for _, display in events)
     else:

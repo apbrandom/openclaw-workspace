@@ -49,10 +49,12 @@ def run_update(payload: dict) -> str:
     return result.stdout.strip()
 
 
-def run_send_card(name: str, chat_id: str) -> str:
+def run_send_card(name: str, chat_id: str | None) -> str:
+    cmd = [PYTHON, str(SEND_CARD_PY), "--name", name]
+    if chat_id:
+        cmd += ["--chat-id", chat_id]
     result = subprocess.run(
-        [PYTHON, str(SEND_CARD_PY), "--name", name, "--chat-id", chat_id],
-        capture_output=True, text=True
+        cmd, capture_output=True, text=True
     )
     if result.returncode != 0:
         die(f"⚠ send_card failed: {result.stderr.strip()}")
@@ -61,7 +63,8 @@ def run_send_card(name: str, chat_id: str) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--chat-id", dest="chat_id", required=True)
+    ap.add_argument("--chat-id", dest="chat_id", default=None,
+                    help="override card destination; default = work dispatch chat")
     ap.add_argument("--json", help="JSON payload (else read stdin)")
     args = ap.parse_args()
 

@@ -8,6 +8,12 @@ This is Vadim's personal OpenClaw workspace — the home directory for an AI ass
 
 **Vadim's profile:** Maritime superintendent and mechanical engineer (ship power plants), iOS development experience, learning OpenClaw deeply. Communicates in Russian. Needs engineering-level explanations, not beginner handholding.
 
+## Session Protocol (Claude Code)
+
+**At session start:** read `ROADMAP.md` — it holds the concept (where we're heading) and the testable spec (R-XX requirements) for Lisa's behavior. It is the single source of truth for "what/how Lisa must do."
+
+**At session end:** if goals, architecture, current state, or any R-XX requirement changed during the session, sync the relevant section of `ROADMAP.md`. Do not wait to be reminded — maintaining this file is Claude Code's job.
+
 ## Infrastructure
 
 **OpenClaw** (v2026.5.28) — the core AI gateway, Node.js, ports 18789/18791 (loopback only).
@@ -21,7 +27,7 @@ systemctl --user restart openclaw-gateway     # restart
 
 ```bash
 curl http://localhost:11434/api/tags   # health check
-ollama run qwen3:14b                   # active model (Qwen3 14B FP8, ~16 GB VRAM)
+ollama run qwen3:14b   # primary Лизы @ 32k, KV q8_0. (30B-A3B-2507 настроена как опция, но не primary — галлюцинирует карточки, не зовёт ship-скилл)
 ```
 
 **PDF tools** (installed system-wide):
@@ -56,6 +62,7 @@ OpenClaw Gateway (Node.js, ports 18789/18791)
 
 | File | Purpose |
 |------|---------|
+| `ROADMAP.md` | Concept + testable spec (R-XX) for Lisa. Read at session start, sync at session end |
 | `AGENTS.md` | Workspace rules: memory system, group chat behavior, heartbeats, red lines |
 | `SOUL.md` | Lisa's identity, tone, partnership principles, mandatory file-editing rules |
 | `MEMORY.md` | Long-term curated memory: hardware, infra config, Vadim's profile, current status |

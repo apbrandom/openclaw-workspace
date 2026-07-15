@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""MCP server: детерминированный показ карточки судна в обход модели.
+"""MCP server: детерминированные операции с карточками судов в обход модели.
 
-Один tool `card`. OpenClaw зовёт его через slash-команду с `command-dispatch:
-tool` (см. SKILL.md), передавая `{command, commandName, skillName}`, где
-`command` = сырой текст после слэша (имя судна). Tool запускает send_card.py —
-тот резолвит алиас, рендерит HTML-карточку и шлёт её в рабочий чат.
+Два tool'а:
+- `card`   — показать существующую карточку (read-only) → send_card.py
+- `update` — записать новые Tier-1 факты и прислать свежую карточку
+             → tier1_pipeline.py (resolve → update vault → send card)
+
+`card` зовётся и slash-командой `/ship_card` (command-dispatch: tool,
+см. skills/ship-card/SKILL.md), и моделью по голому имени судна.
+`update` зовёт модель, когда в сообщении есть новые оперативные факты.
 
 Запуск (stdio) задаётся регистрацией в openclaw.json через `openclaw mcp set`.
 """
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 
@@ -17,6 +22,7 @@ from mcp.server.fastmcp import FastMCP
 
 PYTHON = "/home/apbrandom/.openclaw/tools-venv/bin/python"
 SEND_CARD = Path(__file__).parent / "send_card.py"
+TIER1_PIPELINE = Path(__file__).parent / "tier1_pipeline.py"
 
 mcp = FastMCP("ship")
 
@@ -40,6 +46,45 @@ def card(command: str = "", commandName: str = "", skillName: str = "") -> str:
         return f"⚠ {err or out or 'send_card failed'}"
     # Карточка уже ушла в чат через send_card (Bot API). Возвращаем пусто,
     # чтобы не было второго сообщения «карточка отправлена» поверх карточки.
+    return ""
+
+
+@mcp.tool()
+def update(
+    name: str,
+    position: str = "",
+    status: str = "",
+    tugboat: str = "",
+    last_update_dt: str = "",
+    events: list[str] | None = None,
+) -> str:
+    """ОБНОВИТЬ карточку судна новыми оперативными фактами (ошвартовались/встал/отошёл, позиция, статус, времена) и прислать свежую карточку в чат. Зови при ЛЮБОМ новом факте о судне. name = имя судна (алиас или каноническое, в т.ч. из шапки пересылки). status строго из: на якоре, на ходу, грузовые, швартовка, ожидание, в ремонте, буксировка. last_update_dt = 'YYYY-MM-DD HH:MM'. events = список строк 'HH:MM — факт', одно время = одно событие. ⛔ НЕ для простого показа без новых фактов — там tool card."""
+    payload: dict = {"name": (name or "").strip()}
+    if not payload["name"]:
+        return "⚠ 'name' обязателен: имя судна"
+    if position.strip():
+        payload["position"] = position.strip()
+    if status.strip():
+        payload["status"] = status.strip()
+    if tugboat.strip():
+        payload["tugboat"] = tugboat.strip()
+    if last_update_dt.strip():
+        payload["last_update_dt"] = last_update_dt.strip()
+    if events:
+        payload["events"] = [e.strip() for e in events if e and e.strip()]
+    try:
+        result = subprocess.run(
+            [PYTHON, str(TIER1_PIPELINE)],
+            input=json.dumps(payload, ensure_ascii=False),
+            capture_output=True, text=True, timeout=60,
+        )
+    except Exception as e:  # noqa: BLE001 — surface any spawn failure to the chat
+        return f"⚠ не удалось запустить tier1_pipeline: {e}"
+    if result.returncode != 0:
+        err = (result.stderr or "").strip() or (result.stdout or "").strip()
+        return f"⚠ {err or 'tier1_pipeline failed'}"
+    # Свежая карточка уже ушла в рабочий чат. Пусто — чтобы модель не писала
+    # «карточка обновлена» поверх карточки.
     return ""
 
 

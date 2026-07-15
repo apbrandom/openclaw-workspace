@@ -329,15 +329,22 @@ def _set_link_field(ship_name: str, marker: str, value: str) -> list[str]:
     return []
 
 
+# Статус линкованного судна vs статус исходного (упрощение, 15.07 — сознательно
+# оставлено место для правок: физически «швартовка» буксира не всегда значит,
+# что баржа тоже ошвартована, но пока зеркалим как есть). Отсутствие пары в
+# словаре = статус передаётся без изменений (см. _propagated_status).
+TUG_TO_BARGE_STATUS = {"на ходу": "буксировка"}
+BARGE_TO_TUG_STATUS = {"буксировка": "на ходу"}
+
+
 def _propagated_status(status: str | None, to_barge: bool) -> str | None:
-    """Статус для линкованного судна: буксир «на ходу» = баржа «буксировка» и наоборот."""
+    """Статус для линкованного судна, с учётом маппинга выше."""
     if not status:
         return None
     status = status.strip()
-    if to_barge and status == "на ходу":
-        return "буксировка"
-    if not to_barge and status == "буксировка":
-        return "на ходу"
+    mapping = TUG_TO_BARGE_STATUS if to_barge else BARGE_TO_TUG_STATUS
+    if status in mapping:
+        return mapping[status]
     return status if status in VALID_STATUSES else None
 
 

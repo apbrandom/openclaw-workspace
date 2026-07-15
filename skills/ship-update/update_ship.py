@@ -39,7 +39,8 @@ from datetime import datetime as _datetime
 from pathlib import Path
 from typing import Any
 
-WORKSPACE = Path("/home/apbrandom/.openclaw/workspace")
+# SHIP_WORKSPACE: тестовый override; в проде не задан — боевой vault
+WORKSPACE = Path(os.environ.get("SHIP_WORKSPACE", "/home/apbrandom/.openclaw/workspace"))
 SHIPS_DIRS = [
     WORKSPACE / "vault" / "ships" / "myship",
     WORKSPACE / "vault" / "ships" / "craneship",

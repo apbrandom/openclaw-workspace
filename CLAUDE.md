@@ -52,7 +52,7 @@ OpenClaw Gateway (Node.js, ports 18789/18791)
 ├── Memory: LanceDB (autoCapture + autoRecall) + SQLite (~/.openclaw/memory/main.sqlite)
 ├── Embeddings: nomic-embed-text via Ollama
 ├── Web search: SearXNG
-├── Telegram: @LisaDaemonBot
+├── Telegram: @Lisa_Local_Bot (display name «LisaDaemonBot»)
 └── Skills: mcporter, oracle, notion, nano-pdf (skills/), obsidian (skills/)
 ```
 

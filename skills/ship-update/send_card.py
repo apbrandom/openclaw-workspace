@@ -23,7 +23,7 @@ WORKSPACE    = Path("/home/apbrandom/.openclaw/workspace")
 ENV_FILE     = Path("/home/apbrandom/.openclaw/.env")
 RENDER_PY    = Path(__file__).parent / "render_card.py"
 RESOLVE_PY   = Path(__file__).parent / "resolve_ship.py"
-# Карточку шлёт тот же бот, что ведёт диалог (@LisaDaemonBot), чтобы она
+# Карточку шлёт тот же бот, что ведёт диалог (@Lisa_Local_Bot), чтобы она
 # появлялась в том же чате, а не отдельным ботом.
 BOT_TOKEN_KEY = "TELEGRAM_BOT_TOKEN"
 # Карточки судов всегда уходят в рабочий диспетч-чат Вадима, а не в чат,

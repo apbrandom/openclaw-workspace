@@ -15,7 +15,7 @@
 ### OpenClaw
 - Версия: 2026.5.28
 - Gateway: Node.js, порты 18789/18791 (loopback), systemd
-- Telegram бот: @LisaDaemonBot
+- Telegram бот: @Lisa_Local_Bot (username/адрес; display name — «LisaDaemonBot», это НЕ адрес)
 - Память: миграция LanceDB→QMD в процессе (см. project_qmd_memory_migration)
 - Embeddings: nomic-embed-text через Ollama
 - Веб-поиск: SearXNG сконфигурирован, но НЕ установлен — web_search мёртв

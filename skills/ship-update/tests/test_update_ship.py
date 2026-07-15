@@ -155,12 +155,84 @@ class UpdateShipTest(unittest.TestCase):
         self.assertEqual(self.run_update(payload).returncode, 0)
         self.assertIn("- Буксир: TESTTUG", self.barge.read_text(encoding="utf-8"))
 
-    @unittest.expectedFailure
     def test_barge_underway_without_tugboat_rejected(self) -> None:
-        """R-06: баржа не ходит сама — «на ходу» без буксира должно отклоняться.
-        Пока НЕ реализовано в update_ship.py (задача «связка буксир↔баржа»)."""
-        r = self.run_update({"name": "TESTBARGE", "status": "на ходу"})
+        """R-06: баржа не ходит сама — «на ходу» без буксира отклоняется."""
+        r = self.run_update({"name": "TESTBARGE", "status": "на ходу", "tugboat": "—"})
         self.assertEqual(r.returncode, 2)
+        self.assertIn("R-06", r.stderr)
+
+    # --- Связка буксир↔баржа ---
+
+    def test_link_mirrors_to_tug(self) -> None:
+        """tugboat на барже → зеркальное «Ведёт:» на буксире."""
+        r = self.run_update({"name": "TESTBARGE", "tugboat": "TESTTUG",
+                             "status": "буксировка", "last_update_dt": "2026-01-02 12:00"})
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("- Ведёт: TESTBARGE", self.tug.read_text(encoding="utf-8"))
+
+    def test_tug_movement_propagates_to_barge(self) -> None:
+        """Главное правило: «Корсак прошёл мост» обновляет и баржу."""
+        self.run_update({"name": "TESTBARGE", "tugboat": "TESTTUG"})
+        r = self.run_update({
+            "name": "TESTTUG",
+            "position": "Мост",
+            "status": "на ходу",
+            "last_update_dt": "2026-01-02 16:45",
+            "events": ["16:45 — прошёл мост"],
+        })
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("TESTBARGE", r.stdout, "баржа не в списке обновлённых")
+        barge = self.barge.read_text(encoding="utf-8")
+        self.assertIn("- Позиция: Мост", barge)
+        self.assertIn("- Статус: буксировка", barge, "у баржи должен быть статус «буксировка», не «на ходу»")
+        self.assertIn("- 2026-01-02 16:45 — прошёл мост", barge)
+        self.assertIn("- Обновлено: 2026-01-02 16:45", barge)
+
+    def test_barge_movement_propagates_to_tug(self) -> None:
+        r = self.run_update({
+            "name": "TESTBARGE",
+            "tugboat": "TESTTUG",
+            "position": "Пролив",
+            "status": "буксировка",
+            "last_update_dt": "2026-01-02 14:00",
+            "events": ["14:00 — вошли в пролив"],
+        })
+        self.assertEqual(r.returncode, 0, r.stderr)
+        tug = self.tug.read_text(encoding="utf-8")
+        self.assertIn("- Позиция: Пролив", tug)
+        self.assertIn("- Статус: на ходу", tug, "у буксира «на ходу», не «буксировка»")
+        self.assertIn("- 2026-01-02 14:00 — вошли в пролив", tug)
+
+    def test_unlink_clears_both_sides(self) -> None:
+        self.run_update({"name": "TESTBARGE", "tugboat": "TESTTUG"})
+        r = self.run_update({"name": "TESTBARGE", "tugboat": "—",
+                             "status": "ожидание", "last_update_dt": "2026-01-03 08:00"})
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("- Буксир: —", self.barge.read_text(encoding="utf-8"))
+        self.assertIn("- Ведёт: —", self.tug.read_text(encoding="utf-8"))
+
+    def test_unlinked_tug_does_not_propagate(self) -> None:
+        self.run_update({"name": "TESTBARGE", "tugboat": "TESTTUG"})
+        self.run_update({"name": "TESTBARGE", "tugboat": "—", "status": "ожидание"})
+        barge_before = self.barge.read_bytes()
+        r = self.run_update({"name": "TESTTUG", "position": "Рейд-2",
+                             "last_update_dt": "2026-01-03 10:00"})
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(barge_before, self.barge.read_bytes(),
+                         "разорванная связка не должна прокачивать факты")
+
+    def test_rebind_breaks_old_link(self) -> None:
+        """Буксир ведёт одну баржу: перепривязка рвёт старую связку."""
+        barge2 = self.ws / "vault" / "ships" / "myship" / "TESTBARGE2.md"
+        barge2.write_text(
+            self.barge.read_text(encoding="utf-8").replace("TESTBARGE", "TESTBARGE2"),
+            encoding="utf-8")
+        self.run_update({"name": "TESTBARGE", "tugboat": "TESTTUG"})
+        r = self.run_update({"name": "TESTBARGE2", "tugboat": "TESTTUG"})
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("- Ведёт: TESTBARGE2", self.tug.read_text(encoding="utf-8"))
+        self.assertIn("- Буксир: —", self.barge.read_text(encoding="utf-8"),
+                      "старая баржа должна отвязаться")
 
 
 if __name__ == "__main__":

@@ -40,7 +40,12 @@ WIKI_RE     = re.compile(r"^- \[\[")
 POSITION_RE = re.compile(r"^- Позиция:\s*(.+)",   re.MULTILINE)
 STATUS_RE   = re.compile(r"^- Статус:\s*(.+)",     re.MULTILINE)
 TUGBOAT_RE  = re.compile(r"^- Буксир:\s*(.+)",     re.MULTILINE)
+LEADS_RE    = re.compile(r"^- Ведёт:\s*(.+)",      re.MULTILINE)
 UPDATED_RE  = re.compile(r"^- Обновлено:\s*(.+)",  re.MULTILINE)
+
+# Связка буксир↔баржа старше этого срока помечается «не подтверждалась»
+LINK_STALE_HOURS = 48
+LINK_EMPTY = ("", "-", "—", "нет", "[не задано]")
 FM_NAME_RE  = re.compile(r"^name:[ \t]*(.+)",       re.MULTILINE)
 FM_TYPE_RE  = re.compile(r"^type:[ \t]*(\S.*)",     re.MULTILINE)
 
@@ -165,6 +170,8 @@ def render(name: str, auto_resolve: bool = False, events_limit: int = 5) -> str:
     status_raw = m.group(1).strip() if m else ""
     m = TUGBOAT_RE.search(pos_sec)
     tugboat = m.group(1).strip() if m else ""
+    m = LEADS_RE.search(pos_sec)
+    leads = m.group(1).strip() if m else ""
     m = UPDATED_RE.search(pos_sec)
     updated_str = m.group(1).strip() if m else ""
 
@@ -183,8 +190,18 @@ def render(name: str, auto_resolve: bool = False, events_limit: int = 5) -> str:
 
     # Blockquote
     bq: list[str] = [f"📍 {position}"]
-    if tugboat and tugboat not in ("", "-", "[не задано]"):
+    linked_name = ""
+    if tugboat and tugboat not in LINK_EMPTY:
         bq.append(f"🛥 Буксир: {tugboat}")
+        linked_name = tugboat
+    if leads and leads not in LINK_EMPTY:
+        bq.append(f"🛟 Ведёт: {leads}")
+        linked_name = leads
+    # Связка есть, но карточку давно не трогали — просигналить, не рвать
+    if linked_name:
+        dt = _parse_dt(updated_str)
+        if dt and (datetime.now() - dt).total_seconds() > LINK_STALE_HOURS * 3600:
+            bq.append(f"🟡 связка с {linked_name} не подтверждалась {relative_time(updated_str)}")
     bq.append("")
     bq.append("📋 Бортовой журнал")
     if events:

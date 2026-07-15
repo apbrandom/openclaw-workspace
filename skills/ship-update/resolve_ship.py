@@ -24,11 +24,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from pathlib import Path
 
-WORKSPACE = Path("/home/apbrandom/.openclaw/workspace")
+# SHIP_WORKSPACE: тестовый override; в проде не задан — боевой vault
+WORKSPACE = Path(os.environ.get("SHIP_WORKSPACE", "/home/apbrandom/.openclaw/workspace"))
 SHIPS_DIRS = [
     WORKSPACE / "vault" / "ships" / "myship",
     WORKSPACE / "vault" / "ships" / "craneship",

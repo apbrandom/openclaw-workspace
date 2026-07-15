@@ -64,6 +64,13 @@ VALID_STATUSES = {
     "швартовка", "ожидание", "в ремонте", "буксировка",
 }
 
+# Связка буксир↔баржа: у баржи «Буксир:», у буксира зеркальное «Ведёт:».
+# Источник правды — карточка баржи; «Ведёт:» пишет только этот скрипт.
+LINK_MARKER = "Ведёт:"
+LINK_CLEAR = {"—", "-", "нет"}  # значения tugboat, означающие разрыв связки
+# Статусы, в которых баржа физически движется — без буксира невозможны (R-06)
+BARGE_MOVING_STATUSES = {"на ходу", "буксировка"}
+
 
 def die(msg: str, code: int = 2) -> None:
     print(msg, file=sys.stderr)
@@ -99,6 +106,39 @@ def find_ship_file(name: str) -> Path:
         if d.is_dir():
             listings.extend(sorted(f.stem for f in d.glob("*.md")))
     die(f"⚠ ship file not found: {name}.md (known: {', '.join(listings)})")
+
+
+def find_ship_file_optional(name: str) -> Path | None:
+    """Как find_ship_file, но без die — для линкованного судна, которого может не быть."""
+    if not name or "/" in name or ".." in name:
+        return None
+    for d in SHIPS_DIRS:
+        p = d / f"{name}.md"
+        if p.is_file():
+            return p
+    return None
+
+
+def read_field(body: str, marker: str) -> str | None:
+    """Текущее значение строки '- <marker> <value>' или None, если строки нет."""
+    m = re.search(rf"^- {re.escape(marker)}[ \t]*(.*)$", body, re.MULTILINE)
+    return m.group(1).strip() if m else None
+
+
+def set_or_insert_field(body: str, marker: str, new_value: str) -> str:
+    """replace_status_field, но при отсутствии строки вставляет её перед «Обновлено:»."""
+    pattern = re.compile(rf"^(- {re.escape(marker)})[ \t]*.*$", re.MULTILINE)
+    if pattern.search(body):
+        return pattern.sub(rf"\1 {new_value}", body, count=1)
+    upd = re.search(r"^- Обновлено:", body, re.MULTILINE)
+    if not upd:
+        die(f"⚠ cannot insert '{marker}': 'Обновлено:' line missing")
+    return body[:upd.start()] + f"- {marker} {new_value}\n" + body[upd.start():]
+
+
+def ship_type_of(body: str) -> str:
+    m = re.search(r"^type:[ \t]*(\S.*)$", body, re.MULTILINE)
+    return m.group(1).strip() if m else ""
 
 
 def replace_status_field(body: str, marker: str, new_value: str) -> str:
@@ -251,7 +291,63 @@ def _normalize_event_dates(events: list[str], last_update_dt: str | None) -> lis
     return result
 
 
-def update(payload: dict[str, Any], auto_resolve: bool = False) -> str:
+def _apply(body: str, payload: dict[str, Any]) -> str:
+    """Мутация тела карточки одним payload'ом. Без записи на диск и без связки."""
+    for key, marker in STATUS_FIELDS.items():
+        v = payload.get(key)
+        if v is not None:
+            if key == "tugboat":
+                # у старых карточек барж строки «Буксир:» может не быть
+                body = set_or_insert_field(body, marker, v.strip())
+            else:
+                body = replace_status_field(body, marker, v.strip())
+
+    events = payload.get("events", [])
+    events = _normalize_event_dates(events, payload.get("last_update_dt"))
+    body = append_events(body, events)
+
+    dt = payload.get("last_update_dt")
+    if dt:
+        body = update_frontmatter_date(body, dt.split(" ", 1)[0])
+
+    type_str = payload.get("type")
+    if type_str:
+        body = update_frontmatter_type(body, type_str.strip())
+    return body
+
+
+def _set_link_field(ship_name: str, marker: str, value: str) -> list[str]:
+    """Выставить «Буксир:»/«Ведёт:» на другой карточке. Судна нет — молча пропустить."""
+    path = find_ship_file_optional(ship_name)
+    if not path:
+        return []
+    body = path.read_text(encoding="utf-8")
+    new_body = set_or_insert_field(body, marker, value)
+    if new_body != body:
+        atomic_write(path, new_body)
+        return [f"✓ {ship_name} updated ({path.relative_to(WORKSPACE)})"]
+    return []
+
+
+def _propagated_status(status: str | None, to_barge: bool) -> str | None:
+    """Статус для линкованного судна: буксир «на ходу» = баржа «буксировка» и наоборот."""
+    if not status:
+        return None
+    status = status.strip()
+    if to_barge and status == "на ходу":
+        return "буксировка"
+    if not to_barge and status == "буксировка":
+        return "на ходу"
+    return status if status in VALID_STATUSES else None
+
+
+def update(payload: dict[str, Any], auto_resolve: bool = False) -> list[str]:
+    """Обновить карточку + поддержать связку буксир↔баржа.
+
+    Возвращает список '✓ NAME updated (...)' — по строке на каждую
+    изменённую карточку (цель + линкованное судно). Карточку больше НЕ
+    кэшируем в vault/ship_cards/*.html: send_card.py рендерит на лету.
+    """
     validate(payload)
     name = payload["name"].strip()
     if auto_resolve:
@@ -260,30 +356,81 @@ def update(payload: dict[str, Any], auto_resolve: bool = False) -> str:
             name = canonical
     ship_path = find_ship_file(name)
     body = ship_path.read_text(encoding="utf-8")
+    is_barge = "барж" in ship_type_of(body).lower()
+    old_tug = read_field(body, "Буксир:") if is_barge else None
 
-    for key, marker in STATUS_FIELDS.items():
-        v = payload.get(key)
-        if v is not None:
-            body = replace_status_field(body, marker, v.strip())
+    # tugboat: канонизировать имя буксира / распознать разрыв связки
+    tug_req = payload.get("tugboat")
+    if tug_req is not None:
+        tug_req = tug_req.strip()
+        if tug_req in LINK_CLEAR:
+            payload["tugboat"] = "—"
+            tug_req = "—"
+        else:
+            tug_req = _try_resolve(tug_req) or tug_req
+            payload["tugboat"] = tug_req
 
-    events = payload.get("events", [])
-    events = _normalize_event_dates(events, payload.get("last_update_dt"))
-    body = append_events(body, events)
+    new_body = _apply(body, payload)
 
-    # Update frontmatter date from last_update_dt if provided
-    dt = payload.get("last_update_dt")
-    if dt:
-        body = update_frontmatter_date(body, dt.split(" ", 1)[0])
+    # R-06: движущаяся баржа обязана иметь буксир
+    if is_barge:
+        eff_status = read_field(new_body, "Статус:") or ""
+        eff_tug = read_field(new_body, "Буксир:") or ""
+        if eff_status in BARGE_MOVING_STATUSES and (not eff_tug or eff_tug in LINK_CLEAR):
+            die(f"⚠ R-06: баржа {name} не может быть «{eff_status}» без буксира — "
+                "укажи tugboat (или tugboat='—' + статус стоянки)")
 
-    # Update frontmatter type if provided
-    type_str = payload.get("type")
-    if type_str:
-        body = update_frontmatter_type(body, type_str.strip())
+    atomic_write(ship_path, new_body)
+    messages = [f"✓ {name} updated ({ship_path.relative_to(WORKSPACE)})"]
 
-    atomic_write(ship_path, body)
-    # Карточку больше НЕ кэшируем в vault/ship_cards/*.html: send_card.py рендерит
-    # её на лету при каждом показе, иначе относительное «Обновлено» замерзает.
-    return f"✓ {name} updated ({ship_path.relative_to(WORKSPACE)})"
+    # --- Связка: зеркалим «Ведёт:» на буксире -------------------------------
+    if is_barge and tug_req is not None:
+        if tug_req == "—":
+            if old_tug and old_tug not in LINK_CLEAR:
+                messages += _set_link_field(old_tug, LINK_MARKER, "—")
+        else:
+            tug_path = find_ship_file_optional(tug_req)
+            if tug_path:
+                tug_body = tug_path.read_text(encoding="utf-8")
+                prev_barge = read_field(tug_body, LINK_MARKER)
+                # буксир ведёт одну баржу: старую связку рвём
+                if prev_barge and prev_barge not in LINK_CLEAR and prev_barge != name:
+                    messages += _set_link_field(prev_barge, "Буксир:", "—")
+                messages += _set_link_field(tug_req, LINK_MARKER, name)
+            # у баржи сменился буксир — старый больше не ведёт её
+            if old_tug and old_tug not in LINK_CLEAR and old_tug != tug_req:
+                messages += _set_link_field(old_tug, LINK_MARKER, "—")
+
+    # --- Прокачка движения на линкованное судно ------------------------------
+    movement = {k: payload.get(k) for k in ("position", "status", "last_update_dt", "events")
+                if payload.get(k)}
+    if movement:
+        if is_barge:
+            linked = read_field(new_body, "Буксир:")
+            linked_is_barge = False
+        else:
+            linked = read_field(new_body, LINK_MARKER)
+            linked_is_barge = True
+        if linked and linked not in LINK_CLEAR:
+            linked_path = find_ship_file_optional(linked)
+            if linked_path:
+                lp: dict[str, Any] = {}
+                if movement.get("position"):
+                    lp["position"] = movement["position"]
+                if movement.get("last_update_dt"):
+                    lp["last_update_dt"] = movement["last_update_dt"]
+                if movement.get("events"):
+                    lp["events"] = movement["events"]
+                st = _propagated_status(movement.get("status"), to_barge=linked_is_barge)
+                if st:
+                    lp["status"] = st
+                if lp:
+                    linked_body = _apply(linked_path.read_text(encoding="utf-8"), lp)
+                    atomic_write(linked_path, linked_body)
+                    messages.append(
+                        f"✓ {linked} updated ({linked_path.relative_to(WORKSPACE)})")
+
+    return messages
 
 
 def main() -> None:
@@ -301,7 +448,7 @@ def main() -> None:
     except json.JSONDecodeError as e:
         die(f"⚠ invalid JSON: {e}")
 
-    print(update(payload, auto_resolve=args.auto_resolve))
+    print("\n".join(update(payload, auto_resolve=args.auto_resolve)))
 
 
 if __name__ == "__main__":

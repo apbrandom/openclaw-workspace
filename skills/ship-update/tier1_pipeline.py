@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -78,9 +79,14 @@ def main() -> None:
     if not name:
         die("⚠ 'name' required")
 
-    run_update(payload)
-    result = run_send_card(name, args.chat_id)
-    print(result)
+    update_out = run_update(payload)
+    # Связка буксир↔баржа: update_ship печатает '✓ NAME updated' на КАЖДУЮ
+    # изменённую карточку (цель + линкованное судно) — карточку шлём всем.
+    updated = re.findall(r"^✓ (\S+) updated", update_out, re.MULTILINE)
+    if not updated:
+        updated = [name]
+    for ship in updated:
+        print(run_send_card(ship, args.chat_id))
 
 
 if __name__ == "__main__":

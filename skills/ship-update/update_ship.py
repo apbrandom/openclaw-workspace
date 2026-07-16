@@ -64,6 +64,18 @@ VALID_STATUSES = {
     "швартовка", "ожидание", "в ремонте", "буксировка",
 }
 
+# Допуск на рассинхрон часов/пересылку сообщения с опозданием. Больше этого —
+# явная ошибка даты (модель почти всегда путает "время получения" с датой
+# события при пересланном "вчерашнем" сообщении), не тихая запись в будущее.
+FUTURE_TOLERANCE_HOURS = 3
+
+
+def _reject_future(dt: _datetime, label: str) -> None:
+    delta = (dt - _datetime.now()).total_seconds() / 3600
+    if delta > FUTURE_TOLERANCE_HOURS:
+        die(f"⚠ {label} in the future ({dt.isoformat(' ')}, +{delta:.1f}h) — "
+            f"check date, tolerance is {FUTURE_TOLERANCE_HOURS}h")
+
 # Связка буксир↔баржа: у баржи «Буксир:», у буксира зеркальное «Ведёт:».
 # Источник правды — карточка баржи; «Ведёт:» пишет только этот скрипт.
 LINK_MARKER = "Ведёт:"
@@ -257,6 +269,7 @@ def validate(payload: dict[str, Any]) -> None:
     if dt is not None:
         if not isinstance(dt, str) or not DT_RE.match(dt):
             die(f"⚠ 'last_update_dt' must be 'YYYY-MM-DD HH:MM', got {dt!r}")
+        _reject_future(_datetime.strptime(dt, "%Y-%m-%d %H:%M"), "'last_update_dt'")
 
     for k in ("position", "status", "tugboat", "type"):
         v = payload.get(k)
@@ -287,6 +300,8 @@ def _normalize_event_dates(events: list[str], last_update_dt: str | None) -> lis
             ev = f"{date_prefix} {m.group(1)}{m.group(2)}"
         if not VALID_EVENT_RE.match(ev):
             die(f"⚠ invalid event format (expected 'HH:MM — text' or 'YYYY-MM-DD HH:MM — text'): {ev!r}")
+        ev_dt = _datetime.strptime(ev[:16], "%Y-%m-%d %H:%M")
+        _reject_future(ev_dt, f"event {ev!r}")
         result.append(ev)
     return result
 

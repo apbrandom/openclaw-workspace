@@ -50,6 +50,14 @@ def run_update(payload: dict) -> str:
     return result.stdout.strip()
 
 
+def updated_ships(update_out: str) -> list[str]:
+    """Имена судов из stdout update_ship.py, в порядке первого появления, без
+    дублей. Одно судно может быть переписано дважды за один прогон (линк-поле
+    + отдельная прокачка движения) — dict.fromkeys сохраняет порядок и убирает
+    повтор, чтобы карточка не ушла в чат дважды."""
+    return list(dict.fromkeys(re.findall(r"^✓ (\S+) updated", update_out, re.MULTILINE)))
+
+
 def run_send_card(name: str, chat_id: str | None) -> str:
     cmd = [PYTHON, str(SEND_CARD_PY), "--name", name]
     if chat_id:
@@ -82,9 +90,7 @@ def main() -> None:
     update_out = run_update(payload)
     # Связка буксир↔баржа: update_ship печатает '✓ NAME updated' на КАЖДУЮ
     # изменённую карточку (цель + линкованное судно) — карточку шлём всем.
-    updated = re.findall(r"^✓ (\S+) updated", update_out, re.MULTILINE)
-    if not updated:
-        updated = [name]
+    updated = updated_ships(update_out) or [name]
     for ship in updated:
         print(run_send_card(ship, args.chat_id))
 

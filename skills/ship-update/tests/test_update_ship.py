@@ -126,6 +126,27 @@ class UpdateShipTest(unittest.TestCase):
         r = self.run_update({"name": "TESTTUG", "events": ["просто текст без времени"]})
         self.assertEqual(r.returncode, 2)
 
+    def test_future_last_update_dt_rejected(self) -> None:
+        from datetime import datetime, timedelta
+        future = (datetime.now() + timedelta(hours=5)).strftime("%Y-%m-%d %H:%M")
+        r = self.run_update({"name": "TESTTUG", "last_update_dt": future})
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("future", r.stderr)
+
+    def test_future_event_rejected(self) -> None:
+        from datetime import datetime, timedelta
+        future = (datetime.now() + timedelta(hours=5)).strftime("%H:%M")
+        r = self.run_update({"name": "TESTTUG", "events": [f"{future} — событие из будущего"]})
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("future", r.stderr)
+
+    def test_near_future_within_tolerance_accepted(self) -> None:
+        """Небольшой рассинхрон часов (< 3ч) — не повод отклонять."""
+        from datetime import datetime, timedelta
+        soon = (datetime.now() + timedelta(hours=1)).strftime("%Y-%m-%d %H:%M")
+        r = self.run_update({"name": "TESTTUG", "last_update_dt": soon})
+        self.assertEqual(r.returncode, 0, r.stderr)
+
     # --- R-01c: факт судна X не попадает в карточку Y ---
 
     def test_no_cross_ship_leak(self) -> None:

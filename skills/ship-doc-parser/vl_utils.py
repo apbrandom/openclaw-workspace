@@ -14,7 +14,7 @@ def log(tag, msg):
 
 
 def call_ollama_vl(png, prompt, *, retries=1, retry_delay=30,
-                   timeout=600, req_file="/tmp/vl_req.json"):
+                   timeout=600, req_file="/tmp/vl_req.json", num_ctx=None, num_predict=2048):
     """Один VL-запрос к Ollama.
 
     Возвращает raw response (markdown-фенсы убраны).
@@ -23,8 +23,11 @@ def call_ollama_vl(png, prompt, *, retries=1, retry_delay=30,
     Raises RuntimeError при пустом/невалидном ответе или ошибке Ollama.
     """
     img_b64 = base64.b64encode(Path(png).read_bytes()).decode()
+    options = {"temperature": 0.1, "repeat_penalty": 1.15, "num_predict": num_predict}
+    if num_ctx:
+        options["num_ctx"] = num_ctx
     req = {"model": VL_MODEL, "prompt": prompt, "images": [img_b64],
-           "stream": False, "options": {"temperature": 0.1, "repeat_penalty": 1.15, "num_predict": 2048}}
+           "stream": False, "options": options}
     Path(req_file).write_text(json.dumps(req))
 
     r = None

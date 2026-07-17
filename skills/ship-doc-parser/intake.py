@@ -25,7 +25,7 @@ OPENCLAW_JSON = Path.home() / ".openclaw/openclaw.json"
 def get_bot_token() -> str | None:
     try:
         data = json.loads(OPENCLAW_JSON.read_text())
-        return data.get("channels", {}).get("telegram", {}).get("botToken")
+        return data["channels"]["telegram"]["accounts"]["default"]["botToken"]
     except Exception:
         return None
 

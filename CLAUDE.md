@@ -10,9 +10,9 @@ This is Vadim's personal OpenClaw workspace — the home directory for an AI ass
 
 ## Session Protocol (Claude Code)
 
-**At session start:** read `ROADMAP.md` — it holds the concept (where we're heading) and the testable spec (R-XX requirements) for Lisa's behavior. It is the single source of truth for "what/how Lisa must do."
+**At session start:** read `ROADMAP.md` and `ARCHITECTURE.md`. `ROADMAP.md` holds the concept (where we're heading) and the testable spec (R-XX requirements) for Lisa's behavior — the single source of truth for "what/how Lisa must do." `ARCHITECTURE.md` holds how the system is actually built right now — components, scripts, data stores, who calls whom — so structure doesn't need to be re-derived via Explore each session. Neither file is loaded into Lisa's own runtime (would bloat her per-message context); this is Claude-Code-only reading.
 
-**At session end:** if goals, architecture, current state, or any R-XX requirement changed during the session, sync the relevant section of `ROADMAP.md`. Do not wait to be reminded — maintaining this file is Claude Code's job.
+**At session end:** if goals, architecture, current state, or any R-XX requirement changed during the session, sync the relevant section of `ROADMAP.md` and/or `ARCHITECTURE.md`. Do not wait to be reminded — maintaining these files is Claude Code's job.
 
 ## Infrastructure
 
@@ -63,6 +63,7 @@ OpenClaw Gateway (Node.js, ports 18789/18791)
 | File | Purpose |
 |------|---------|
 | `ROADMAP.md` | Concept + testable spec (R-XX) for Lisa. Read at session start, sync at session end |
+| `ARCHITECTURE.md` | How the system is built right now: components, scripts, data stores, dependencies. Read at session start, sync at session end. Claude-Code-only, not loaded into Lisa's runtime |
 | `AGENTS.md` | Workspace rules: memory system, group chat behavior, heartbeats, red lines |
 | `SOUL.md` | Lisa's identity, tone, partnership principles, mandatory file-editing rules |
 | `MEMORY.md` | Long-term curated memory: hardware, infra config, Vadim's profile, current status |
